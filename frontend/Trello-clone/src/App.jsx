@@ -1,8 +1,10 @@
+import Container from '@mui/material/Container';
 import Button from '@mui/material/Button'
 import Icon from '@mui/material/Icon';
 import Stack from '@mui/material/Stack';
 import { green } from '@mui/material/colors';
 import { useColorScheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 
 function ModeToggle() {
   const { mode, setMode } = useColorScheme();
@@ -19,6 +21,14 @@ function ModeToggle() {
       onClick={() => {
         setMode(mode === 'light' ? 'dark' : 'light');
       }}
+      sx={{
+        color: 'text.primary',
+        borderColor: 'text.primary',
+        '&:hover': {
+          borderColor: 'text.primary',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        },
+      }}
     >
       {mode === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
     </Button>
@@ -28,22 +38,35 @@ function ModeToggle() {
 function App() {
 
   return (
-    <>
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-      <div>Phan Huu Tri</div>
-      <ModeToggle />
-    </Stack>
-    <Button variant='text'>Text</Button>
-    <Button variant='contained'>Contained</Button>
-    <Button variant='outlined'>Outlined</Button>
-    <Stack direction="row" spacing={3} sx={{ mt: 2 }}>
-      <Icon>add_circle</Icon>
-      <Icon color="primary">add_circle</Icon>
-      <Icon sx={{ color: green[500] }}>add_circle</Icon>
-      <Icon fontSize="small">add_circle</Icon>
-      <Icon sx={{ fontSize: 30 }}>add_circle</Icon>
-    </Stack>
-    </>
+    <Container disableGutters maxWidth={false} sx={{ height: '100vh'}}>
+      <Box sx={{ 
+        backgroundColor: 'primary.light', 
+        height: (theme) => theme.trelloCustom.appBarHeight, 
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        }}>
+        <ModeToggle />
+      </Box>
+      <Box sx={{
+        bgcolor: 'primary.dark',
+        height: (theme) => theme.trelloCustom.boardBarHeight, 
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+      }}>
+        Board Bar
+      </Box>
+      <Box sx={{
+        bgcolor: 'primary.main',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        height: (theme) => `calc(100vh - ${theme.trelloCustom.appBarHeight} - ${theme.trelloCustom.boardBarHeight})`,
+      }}>
+        Board Content
+      </Box>
+    </Container>
   )
 }
 
