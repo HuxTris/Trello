@@ -15,7 +15,7 @@ const TRELLO_COLORS = {
   boardBarDark: '#1D2125',
 
   // Board Content (main area)
-  boardContentLight: '#0079BF',
+  boardContentLight: '#ffffffff',
   boardContentDark: '#1D2125',
 
   // Column (list)
