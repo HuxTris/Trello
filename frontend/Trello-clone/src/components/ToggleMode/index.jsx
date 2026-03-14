@@ -1,5 +1,8 @@
-import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { useColorScheme } from '@mui/material/styles';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 
 function ModeToggle() {
   const { mode, setMode } = useColorScheme();
@@ -11,22 +14,26 @@ function ModeToggle() {
   }
 
   return (
-    <Button
-      variant="outlined"
-      onClick={() => {
-        setMode(mode === 'light' ? 'dark' : 'light');
-      }}
-      sx={{
-        color: 'text.primary',
-        borderColor: 'text.primary',
-        '&:hover': {
-          borderColor: 'text.primary',
-          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        },
-      }}
-    >
-      {mode === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
-    </Button>
+    <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+      <IconButton
+        size="small"
+        onClick={() => {
+          setMode(mode === 'light' ? 'dark' : 'light');
+        }}
+        sx={{
+          color: 'common.white',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          },
+        }}
+      >
+        {mode === 'light' ? (
+          <DarkModeOutlinedIcon fontSize="small" />
+        ) : (
+          <LightModeOutlinedIcon fontSize="small" />
+        )}
+      </IconButton>
+    </Tooltip>
   );
 }
 
