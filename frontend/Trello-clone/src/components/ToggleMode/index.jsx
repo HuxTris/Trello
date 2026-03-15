@@ -7,8 +7,6 @@ import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 function ModeToggle() {
   const { mode, setMode } = useColorScheme();
 
-  // mode chưa được xác định trên lần render đầu tiên (SSR-safe)
-  // Nếu chưa có mode, không render gì cả để tránh hydration mismatch
   if (!mode) {
     return null;
   }
@@ -20,12 +18,7 @@ function ModeToggle() {
         onClick={() => {
           setMode(mode === 'light' ? 'dark' : 'light');
         }}
-        sx={{
-          color: 'common.white',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-          },
-        }}
+        sx={(theme) => theme.trelloCustom.appBar.iconButton}
       >
         {mode === 'light' ? (
           <DarkModeOutlinedIcon fontSize="small" />
@@ -37,4 +30,4 @@ function ModeToggle() {
   );
 }
 
-export default ModeToggle
+export default ModeToggle;

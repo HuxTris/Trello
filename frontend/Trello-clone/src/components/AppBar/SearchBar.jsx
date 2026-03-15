@@ -1,7 +1,6 @@
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import SearchIcon from '@mui/icons-material/Search';
-import { appBarSearchInputSx } from './styles';
 
 function AppBarSearch() {
   return (
@@ -13,7 +12,7 @@ function AppBarSearch() {
           <SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.85)' }} fontSize="small" />
         </InputAdornment>
       }
-      sx={appBarSearchInputSx}
+      sx={(theme) => theme.trelloCustom.appBar.searchInput}
     />
   );
 }

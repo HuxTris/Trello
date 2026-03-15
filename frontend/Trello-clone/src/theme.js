@@ -39,7 +39,112 @@ const TRELLO_COLORS = {
 const theme = createTheme({
   trelloCustom: {
     appBarHeight: '45px',
+    appBarMobileHeight: '52px',
     boardBarHeight: '60px',
+    appBar: {
+      root: {
+        width: '100%',
+        display: 'flex',
+        flexWrap: 'nowrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1,
+        px: { xs: 1, sm: 2 },
+        height: { xs: '52px', md: '45px' },
+        bgcolor: 'appBar.main',
+        borderBottom: '1px solid',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+      },
+      leftSection: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        minWidth: 0,
+        whiteSpace: 'nowrap',
+      },
+      menusContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'nowrap',
+        gap: 0.25,
+      },
+      searchContainer: {
+        flex: 1,
+        minWidth: 0,
+        display: { xs: 'none', sm: 'flex' },
+        justifyContent: 'center',
+        px: 1,
+      },
+      actionsContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: { xs: 0.25, sm: 0.5 },
+        flexShrink: 0,
+      },
+      logo: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.75,
+        height: 30,
+      },
+      logoText: {
+        color: 'common.white',
+        fontWeight: 700,
+        fontSize: '0.875rem',
+        lineHeight: 1,
+        letterSpacing: 0.3,
+        whiteSpace: 'nowrap',
+        display: { xs: 'none', sm: 'block' },
+      },
+      iconButton: {
+        color: 'common.white',
+        width: 30,
+        height: 30,
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        },
+      },
+      searchInput: {
+        width: '100%',
+        maxWidth: { sm: 360, md: 420 },
+        height: 32,
+        color: 'common.white',
+        bgcolor: 'rgba(255, 255, 255, 0.08)',
+        '& .MuiOutlinedInput-input': {
+          py: '7px',
+          fontSize: '0.8125rem',
+          lineHeight: 1.2,
+        },
+        '& .MuiOutlinedInput-notchedOutline': {
+          borderColor: 'rgba(255, 255, 255, 0.25)',
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+          borderColor: 'rgba(255, 255, 255, 0.4)',
+        },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+          borderColor: 'rgba(255, 255, 255, 0.55)',
+        },
+        '& input::placeholder': {
+          color: 'rgba(255, 255, 255, 0.85)',
+          opacity: 1,
+        },
+      },
+      avatar: {
+        width: 30,
+        height: 30,
+        bgcolor: 'secondary.main',
+        fontSize: 14,
+      },
+      desktopOnly: {
+        display: { xs: 'none', md: 'inline-flex' },
+      },
+      smUpOnly: {
+        display: { xs: 'none', sm: 'inline-flex' },
+      },
+      mobileOnly: {
+        display: { xs: 'inline-flex', md: 'none' },
+      },
+    },
   },
   cssVariables: {
     colorSchemeSelector: 'class'
@@ -178,6 +283,59 @@ const theme = createTheme({
           fontWeight: 500,
         },
       },
+      variants: [
+        {
+          props: { variant: 'appBarMenu' },
+          style: {
+            color: '#FFFFFF',
+            paddingInline: '6px',
+            minWidth: 'auto',
+            height: 30,
+            fontSize: '0.8125rem',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            display: 'none',
+            '& .MuiButton-startIcon': {
+              marginLeft: 0,
+              marginRight: 4,
+            },
+            '& .MuiButton-endIcon': {
+              marginLeft: 2,
+              marginRight: 0,
+            },
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            },
+            '@media (min-width:900px)': {
+              display: 'inline-flex',
+            },
+          },
+        },
+        {
+          props: { variant: 'appBarCreate' },
+          style: {
+            color: '#FFFFFF',
+            paddingInline: '8px',
+            minWidth: 'auto',
+            height: 30,
+            fontSize: '0.8125rem',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            display: 'none',
+            '& .MuiButton-startIcon': {
+              marginLeft: 0,
+              marginRight: 4,
+            },
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.25)',
+            },
+            '@media (min-width:600px)': {
+              display: 'inline-flex',
+            },
+          },
+        },
+      ],
     },
     MuiOutlinedInput: {
       styleOverrides: {

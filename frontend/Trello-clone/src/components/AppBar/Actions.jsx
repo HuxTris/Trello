@@ -7,32 +7,50 @@ import AddToPhotosOutlinedIcon from '@mui/icons-material/AddToPhotosOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import ModeToggle from '../ToggleMode';
-import { appBarActionButtonSx, appBarCreateButtonSx } from './styles';
 
 function AppBarActions() {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.5 } }}>
-      <Button size="small" startIcon={<AddToPhotosOutlinedIcon />} sx={appBarCreateButtonSx}>
+    <Box sx={(theme) => theme.trelloCustom.appBar.actionsContainer}>
+      <Button size="small" variant="appBarCreate" startIcon={<AddToPhotosOutlinedIcon />}>
         Create
       </Button>
+
+      <Tooltip title="Search">
+        <IconButton size="small" sx={(theme) => ({ ...theme.trelloCustom.appBar.iconButton, ...theme.trelloCustom.appBar.mobileOnly })}>
+          <SearchOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+
       <Tooltip title="Recent activity">
-        <IconButton size="small" sx={appBarActionButtonSx}>
+        <IconButton size="small" sx={(theme) => ({ ...theme.trelloCustom.appBar.iconButton, ...theme.trelloCustom.appBar.desktopOnly })}>
           <AccessTimeOutlinedIcon fontSize="small" />
         </IconButton>
       </Tooltip>
+
       <Tooltip title="Notifications">
-        <IconButton size="small" sx={appBarActionButtonSx}>
+        <IconButton size="small" sx={(theme) => theme.trelloCustom.appBar.iconButton}>
           <NotificationsNoneOutlinedIcon fontSize="small" />
         </IconButton>
       </Tooltip>
+
       <Tooltip title="Help">
-        <IconButton size="small" sx={appBarActionButtonSx}>
+        <IconButton size="small" sx={(theme) => ({ ...theme.trelloCustom.appBar.iconButton, ...theme.trelloCustom.appBar.desktopOnly })}>
           <HelpOutlineOutlinedIcon fontSize="small" />
         </IconButton>
       </Tooltip>
+
       <ModeToggle />
-      <Avatar sx={{ width: 30, height: 30, bgcolor: 'secondary.main', fontSize: 14 }}>H</Avatar>
+
+      <Avatar sx={(theme) => theme.trelloCustom.appBar.avatar}>H</Avatar>
+
+      <Tooltip title="Menu">
+        <IconButton size="small" sx={(theme) => ({ ...theme.trelloCustom.appBar.iconButton, ...theme.trelloCustom.appBar.mobileOnly })}>
+          <MenuOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }

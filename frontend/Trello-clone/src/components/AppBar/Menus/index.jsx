@@ -6,7 +6,7 @@ import TemplatesMenu from './Templates';
 
 function AppBarMenus() {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', gap: 0.25 }}>
+    <Box sx={(theme) => theme.trelloCustom.appBar.menusContainer}>
       <WorkspacesMenu />
       <StartedMenu />
       <RecentMenu />
