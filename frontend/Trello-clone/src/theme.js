@@ -41,6 +41,7 @@ const theme = createTheme({
     appBarHeight: '45px',
     appBarMobileHeight: '52px',
     boardBarHeight: '60px',
+    boardBarMobileHeight: '56px',
     appBar: {
       root: {
         width: '100%',
@@ -134,6 +135,68 @@ const theme = createTheme({
         height: 30,
         bgcolor: 'secondary.main',
         fontSize: 14,
+      },
+      desktopOnly: {
+        display: { xs: 'none', md: 'inline-flex' },
+      },
+      smUpOnly: {
+        display: { xs: 'none', sm: 'inline-flex' },
+      },
+      mobileOnly: {
+        display: { xs: 'inline-flex', md: 'none' },
+      },
+    },
+    boardBar: {
+      root: {
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1,
+        px: { xs: 1, sm: 2 },
+        height: { xs: '56px', md: '60px' },
+        bgcolor: 'boardBar.main',
+        borderBottom: '1px solid',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+      },
+      leftSection: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        minWidth: 0,
+      },
+      rightSection: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: { xs: 0.25, sm: 0.5 },
+        flexShrink: 0,
+      },
+      title: {
+        color: 'common.white',
+        fontWeight: 700,
+        fontSize: { xs: '0.9rem', md: '1rem' },
+        lineHeight: 1.1,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: { xs: '42vw', sm: '54vw', md: '100%' },
+      },
+      iconButton: {
+        color: 'common.white',
+        width: 30,
+        height: 30,
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        },
+      },
+      members: {
+        '& .MuiAvatar-root': {
+          width: 28,
+          height: 28,
+          fontSize: 12,
+          border: '2px solid',
+          borderColor: 'boardBar.main',
+        },
       },
       desktopOnly: {
         display: { xs: 'none', md: 'inline-flex' },
@@ -332,6 +395,48 @@ const theme = createTheme({
             },
             '@media (min-width:600px)': {
               display: 'inline-flex',
+            },
+          },
+        },
+        {
+          props: { variant: 'boardBarAction' },
+          style: {
+            color: '#FFFFFF',
+            paddingInline: '8px',
+            minWidth: 'auto',
+            height: 32,
+            borderRadius: 8,
+            fontSize: '0.8125rem',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+            '& .MuiButton-startIcon': {
+              marginLeft: 0,
+              marginRight: 4,
+            },
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.22)',
+            },
+          },
+        },
+        {
+          props: { variant: 'boardBarInvite' },
+          style: {
+            color: '#172B4D',
+            paddingInline: '10px',
+            minWidth: 'auto',
+            height: 32,
+            borderRadius: 8,
+            fontSize: '0.8125rem',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            backgroundColor: '#FFFFFF',
+            '& .MuiButton-startIcon': {
+              marginLeft: 0,
+              marginRight: 4,
+            },
+            '&:hover': {
+              backgroundColor: '#E9F2FF',
             },
           },
         },

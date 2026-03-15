@@ -1,17 +1,14 @@
 import Box from '@mui/material/Box';
+import BoardBarLeft from './BoardBarLeft';
+import BoardBarRight from './BoardBarRight';
 
 function BoardBar() {
-    return (    
-    <Box sx={{
-        bgcolor: 'primary.dark',
-        height: (theme) => theme.trelloCustom.boardBarHeight, 
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-      }}>
-        Board Bar
+  return (
+    <Box sx={(theme) => theme.trelloCustom.boardBar.root}>
+      <BoardBarLeft />
+      <BoardBarRight />
     </Box>
-    )
+  );
 }
 
-export default BoardBar
+export default BoardBar;
