@@ -7,7 +7,10 @@ function BoardContent() {
         width: '100%',
         display: 'flex',
         alignItems: 'center',
-        height: (theme) => `calc(100vh - ${theme.trelloCustom.appBarHeight} - ${theme.trelloCustom.boardBarHeight})`,
+        height: (theme) => ({
+          xs: `calc(100vh - ${theme.trelloCustom.appBarMobileHeight} - ${theme.trelloCustom.boardBarHeight})`,
+          md: `calc(100vh - ${theme.trelloCustom.appBarHeight} - ${theme.trelloCustom.boardBarHeight})`,
+        }),
       }}>
         Board Content
       </Box>

@@ -5,20 +5,9 @@ import AppSvgIcon from '../SvgIcon';
 
 function AppBarLogo() {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, height: 30 }}>
+    <Box sx={(theme) => theme.trelloCustom.appBar.logo}>
       <AppSvgIcon component={TrelloMark} sx={{ color: 'common.white', fontSize: 20 }} />
-      <Typography
-        variant="body2"
-        sx={{
-          color: 'common.white',
-          fontWeight: 700,
-          fontSize: '0.875rem',
-          lineHeight: 1,
-          letterSpacing: 0.3,
-          whiteSpace: 'nowrap',
-          display: { xs: 'none', sm: 'block' },
-        }}
-      >
+      <Typography variant="body2" sx={(theme) => theme.trelloCustom.appBar.logoText}>
         Trello
       </Typography>
     </Box>
