@@ -16,7 +16,7 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import ModeToggle from '../ToggleMode';
-import HoverDropdownMenu from '../Dropdown/HoverDropdownMenu';
+import MuiDropdownMenu from '../Dropdown/MuiDropdownMenu';
 
 const CREATE_ITEMS = [
   { id: 'create-board', label: 'Create board', icon: ViewKanbanOutlinedIcon },
@@ -66,7 +66,7 @@ const MOBILE_SEARCH_ITEMS = [
 function AppBarActions() {
   return (
     <Box sx={(theme) => theme.trelloCustom.appBar.actionsContainer}>
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={CREATE_ITEMS}
         renderTrigger={({ triggerProps }) => (
           <Button size="small" variant="appBarCreate" startIcon={<AddToPhotosOutlinedIcon />} {...triggerProps}>
@@ -75,9 +75,8 @@ function AppBarActions() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={MOBILE_SEARCH_ITEMS}
-        openOnHover={false}
         minWidth={220}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -88,7 +87,7 @@ function AppBarActions() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={ACTIVITY_ITEMS}
         minWidth={280}
         renderTrigger={({ triggerProps }) => (
@@ -102,7 +101,7 @@ function AppBarActions() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={NOTIFICATION_ITEMS}
         minWidth={290}
         renderTrigger={({ triggerProps }) => (
@@ -112,7 +111,7 @@ function AppBarActions() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={HELP_ITEMS}
         minWidth={260}
         renderTrigger={({ triggerProps }) => (
@@ -128,9 +127,8 @@ function AppBarActions() {
 
       <ModeToggle />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={PROFILE_ITEMS}
-        openOnHover={false}
         minWidth={220}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -141,9 +139,8 @@ function AppBarActions() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={MOBILE_MENU_ITEMS}
-        openOnHover={false}
         minWidth={250}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}

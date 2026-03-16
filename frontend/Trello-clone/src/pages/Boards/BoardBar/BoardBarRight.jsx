@@ -12,7 +12,7 @@ import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined';
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
-import HoverDropdownMenu from '../../../components/Dropdown/HoverDropdownMenu';
+import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
 
 const BOARD_MEMBERS = ['AL', 'HN', 'MK', 'PT', 'QH'];
 
@@ -49,7 +49,7 @@ function BoardBarRight() {
         ))}
       </AvatarGroup>
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={INVITE_ITEMS}
         minWidth={240}
         renderTrigger={({ triggerProps }) => (
@@ -66,9 +66,8 @@ function BoardBarRight() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={INVITE_ITEMS}
-        openOnHover={false}
         minWidth={240}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -79,7 +78,7 @@ function BoardBarRight() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={AUTOMATION_ITEMS}
         minWidth={240}
         renderTrigger={({ triggerProps }) => (
@@ -96,7 +95,7 @@ function BoardBarRight() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={FILTER_ITEMS}
         minWidth={220}
         renderTrigger={({ triggerProps }) => (
@@ -113,7 +112,7 @@ function BoardBarRight() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={MORE_ITEMS}
         minWidth={230}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}

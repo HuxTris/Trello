@@ -10,7 +10,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
-import HoverDropdownMenu from '../../../components/Dropdown/HoverDropdownMenu';
+import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
 
 const PRIVATE_ITEMS = [
   { id: 'private', label: 'Private', icon: LockOutlinedIcon },
@@ -35,7 +35,7 @@ function BoardBarLeft() {
         </IconButton>
       </Tooltip>
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={PRIVATE_ITEMS}
         minWidth={240}
         renderTrigger={({ triggerProps }) => (
@@ -52,7 +52,7 @@ function BoardBarLeft() {
         )}
       />
 
-      <HoverDropdownMenu
+      <MuiDropdownMenu
         items={VISIBILITY_ITEMS}
         minWidth={270}
         renderTrigger={({ triggerProps }) => (

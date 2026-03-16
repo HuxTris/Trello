@@ -1,60 +1,38 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 
-function HoverDropdownMenu({
-  items,
+function MuiDropdownMenu({
+  items = [],
   renderTrigger,
-  openOnHover = true,
   anchorOrigin = { vertical: 'bottom', horizontal: 'left' },
   transformOrigin = { vertical: 'top', horizontal: 'left' },
   minWidth = 220,
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
-  const closeTimerRef = useRef(null);
-
   const open = Boolean(anchorEl);
 
-  const clearCloseTimer = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
+  const handleTriggerClick = (event) => {
+    if (open && anchorEl === event.currentTarget) {
+      setAnchorEl(null);
+      return;
     }
-  };
 
-  const handleOpen = (event) => {
-    clearCloseTimer();
     setAnchorEl(event.currentTarget);
   };
 
   const handleClose = () => {
-    clearCloseTimer();
     setAnchorEl(null);
   };
-
-  const scheduleClose = () => {
-    clearCloseTimer();
-    closeTimerRef.current = setTimeout(() => {
-      setAnchorEl(null);
-    }, 120);
-  };
-
-  useEffect(() => {
-    return () => {
-      clearCloseTimer();
-    };
-  }, []);
 
   return (
     <>
       {renderTrigger({
         open,
         triggerProps: {
-          onClick: handleOpen,
-          onMouseEnter: openOnHover ? handleOpen : undefined,
-          onMouseLeave: openOnHover ? scheduleClose : undefined,
+          onClick: handleTriggerClick,
           'aria-expanded': open ? 'true' : undefined,
           'aria-haspopup': 'menu',
         },
@@ -68,11 +46,9 @@ function HoverDropdownMenu({
         transformOrigin={transformOrigin}
         slotProps={{
           paper: {
-            onMouseEnter: openOnHover ? clearCloseTimer : undefined,
-            onMouseLeave: openOnHover ? scheduleClose : undefined,
             sx: {
               minWidth,
-              mt: 0.5,
+              mt: 0,
               borderRadius: 2,
             },
           },
@@ -104,4 +80,4 @@ function HoverDropdownMenu({
   );
 }
 
-export default HoverDropdownMenu;
+export default MuiDropdownMenu;

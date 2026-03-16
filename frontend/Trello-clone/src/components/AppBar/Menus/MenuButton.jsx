@@ -1,10 +1,10 @@
 import Button from '@mui/material/Button';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import HoverDropdownMenu from '../../Dropdown/HoverDropdownMenu';
+import MuiDropdownMenu from '../../Dropdown/MuiDropdownMenu';
 
 function MenuButton({ label, icon: IconComponent, items = [] }) {
   return (
-    <HoverDropdownMenu
+    <MuiDropdownMenu
       items={items}
       renderTrigger={({ triggerProps }) => (
         <Button
