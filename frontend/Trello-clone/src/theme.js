@@ -414,6 +414,10 @@ const theme = createTheme({
               marginLeft: 0,
               marginRight: 4,
             },
+            '& .MuiButton-endIcon': {
+              marginLeft: 2,
+              marginRight: 0,
+            },
             '&:hover': {
               backgroundColor: 'rgba(255, 255, 255, 0.22)',
             },
@@ -434,6 +438,10 @@ const theme = createTheme({
             '& .MuiButton-startIcon': {
               marginLeft: 0,
               marginRight: 4,
+            },
+            '& .MuiButton-endIcon': {
+              marginLeft: 2,
+              marginRight: 0,
             },
             '&:hover': {
               backgroundColor: '#E9F2FF',

@@ -6,12 +6,28 @@ import Typography from '@mui/material/Typography';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Groups2OutlinedIcon from '@mui/icons-material/Groups2Outlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
+import HoverDropdownMenu from '../../../components/Dropdown/HoverDropdownMenu';
+
+const PRIVATE_ITEMS = [
+  { id: 'private', label: 'Private', icon: LockOutlinedIcon },
+  { id: 'workspace-visible', label: 'Workspace visible', icon: VisibilityOutlinedIcon },
+  { id: 'edit-permissions', label: 'Edit permissions', icon: EditOutlinedIcon },
+];
+
+const VISIBILITY_ITEMS = [
+  { id: 'visible-members', label: 'Visible to workspace members', icon: Groups2OutlinedIcon },
+  { id: 'copy-link', label: 'Copy board link', icon: ContentCopyOutlinedIcon },
+  { id: 'change-visibility', label: 'Change visibility', icon: EditOutlinedIcon },
+];
 
 function BoardBarLeft() {
   return (
     <Box sx={(theme) => theme.trelloCustom.boardBar.leftSection}>
-      <Typography sx={(theme) => theme.trelloCustom.boardBar.title}>Frontend Sprint Board</Typography>
+      <Typography sx={(theme) => theme.trelloCustom.boardBar.title}>HuxTris Workspace</Typography>
 
       <Tooltip title="Star this board">
         <IconButton size="small" sx={(theme) => theme.trelloCustom.boardBar.iconButton}>
@@ -19,24 +35,39 @@ function BoardBarLeft() {
         </IconButton>
       </Tooltip>
 
-      <Button
-        size="small"
-        variant="boardBarAction"
-        startIcon={<LockOutlinedIcon fontSize="small" />}
-        sx={(theme) => theme.trelloCustom.boardBar.smUpOnly}
-      >
-        Private
-      </Button>
+      <HoverDropdownMenu
+        items={PRIVATE_ITEMS}
+        minWidth={240}
+        renderTrigger={({ triggerProps }) => (
+          <Button
+            size="small"
+            variant="boardBarAction"
+            startIcon={<LockOutlinedIcon fontSize="small" />}
+            endIcon={<KeyboardArrowDownOutlinedIcon fontSize="small" />}
+            sx={(theme) => theme.trelloCustom.boardBar.smUpOnly}
+            {...triggerProps}
+          >
+            Private
+          </Button>
+        )}
+      />
 
-      <Button
-        size="small"
-        variant="boardBarAction"
-        startIcon={<Groups2OutlinedIcon fontSize="small" />}
-        endIcon={<KeyboardArrowDownOutlinedIcon fontSize="small" />}
-        sx={(theme) => theme.trelloCustom.boardBar.desktopOnly}
-      >
-        Workspace visible
-      </Button>
+      <HoverDropdownMenu
+        items={VISIBILITY_ITEMS}
+        minWidth={270}
+        renderTrigger={({ triggerProps }) => (
+          <Button
+            size="small"
+            variant="boardBarAction"
+            startIcon={<Groups2OutlinedIcon fontSize="small" />}
+            endIcon={<KeyboardArrowDownOutlinedIcon fontSize="small" />}
+            sx={(theme) => theme.trelloCustom.boardBar.desktopOnly}
+            {...triggerProps}
+          >
+            Workspace visible
+          </Button>
+        )}
+      />
     </Box>
   );
 }
