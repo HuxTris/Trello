@@ -8,7 +8,7 @@ function BoardContent() {
         display: 'flex',
         alignItems: 'center',
         height: (theme) => ({
-          xs: `calc(100vh - ${theme.trelloCustom.appBarMobileHeight} - ${theme.trelloCustom.boardBarHeight})`,
+          xs: `calc(100vh - ${theme.trelloCustom.appBarMobileHeight} - ${theme.trelloCustom.boardBarMobileHeight})`,
           md: `calc(100vh - ${theme.trelloCustom.appBarHeight} - ${theme.trelloCustom.boardBarHeight})`,
         }),
       }}>
