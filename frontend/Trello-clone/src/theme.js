@@ -1,41 +1,160 @@
-import { createTheme } from '@mui/material/styles'
+import { createTheme } from '@mui/material/styles';
 
-// Trello-inspired colors
-const TRELLO_COLORS = {
-  // Primary Blue (Trello brand blue)
-  primaryLight: '#0079BF',
-  primaryDark: '#579DFF',
+const WHITE_TEXT = '#FFFFFF';
 
-  // App Bar / Header
-  appBarLight: '#1565C0',
-  appBarDark: '#1D2125',
+const COLORS = {
+  light: {
+    primary: { main: '#0079BF', light: '#4FC3F7', dark: '#01579B' },
+    appBar: '#1565C0',
+    boardBar: '#1976D2',
+    boardContent: '#FFFFFF',
+    column: '#EBECF0',
+    columnHeader: '#091E42',
+    card: '#FFFFFF',
+  },
+  dark: {
+    primary: { main: '#579DFF', light: '#85B8FF', dark: '#388BFD' },
+    appBar: '#1D2125',
+    boardBar: '#1D2125',
+    boardContent: '#1D2125',
+    column: '#22272B',
+    columnHeader: '#B6C2CF',
+    card: '#282E33',
+  },
+};
 
-  // Board Bar (sub-header below appbar)
-  boardBarLight: '#1976D2',
-  boardBarDark: '#1D2125',
+const STATUS_COLORS = {
+  secondary: { main: '#FF9800' },
+  error: { main: '#EB5A46' },
+  warning: { main: '#F2D600' },
+  success: { main: '#61BD4F' },
+  info: { main: '#00C2E0' },
+};
 
-  // Board Content (main area)
-  boardContentLight: '#ffffffff',
-  boardContentDark: '#1D2125',
+const APP_BAR_MENU_BUTTON = {
+  color: WHITE_TEXT,
+  paddingInline: '6px',
+  minWidth: 'auto',
+  height: 30,
+  fontSize: '0.8125rem',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+  display: 'none',
+  '& .MuiButton-startIcon': {
+    marginLeft: 0,
+    marginRight: 4,
+  },
+  '& .MuiButton-endIcon': {
+    marginLeft: 2,
+    marginRight: 0,
+  },
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  '@media (min-width:900px)': {
+    display: 'inline-flex',
+  },
+};
 
-  // Column (list)
-  columnLight: '#EBECF0',
-  columnDark: '#22272B',
-  columnHeaderLight: '#091E42',
-  columnHeaderDark: '#B6C2CF',
+const APP_BAR_CREATE_BUTTON = {
+  color: WHITE_TEXT,
+  paddingInline: '8px',
+  minWidth: 'auto',
+  height: 30,
+  fontSize: '0.8125rem',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  display: 'none',
+  '& .MuiButton-startIcon': {
+    marginLeft: 0,
+    marginRight: 4,
+  },
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  '@media (min-width:600px)': {
+    display: 'inline-flex',
+  },
+};
 
-  // Card
-  cardLight: '#FFFFFF',
-  cardDark: '#282E33',
+const BOARD_BAR_ACTION_BUTTON = {
+  color: WHITE_TEXT,
+  paddingInline: '8px',
+  minWidth: 'auto',
+  height: 32,
+  borderRadius: 8,
+  fontSize: '0.8125rem',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  '& .MuiButton-startIcon': {
+    marginLeft: 0,
+    marginRight: 4,
+  },
+  '& .MuiButton-endIcon': {
+    marginLeft: 2,
+    marginRight: 0,
+  },
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+  },
+};
 
-  // Text colors
-  textPrimaryLight: '#000206ff',
-  textPrimaryDark: '#f5f5f5ff',
-  textSecondaryLight: '#44546F',
-  textSecondaryDark: '#8C9BAB',
-}
+const BOARD_BAR_INVITE_BUTTON = {
+  color: '#172B4D',
+  paddingInline: '10px',
+  minWidth: 'auto',
+  height: 32,
+  borderRadius: 8,
+  fontSize: '0.8125rem',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+  backgroundColor: '#FFFFFF',
+  '& .MuiButton-startIcon': {
+    marginLeft: 0,
+    marginRight: 4,
+  },
+  '& .MuiButton-endIcon': {
+    marginLeft: 2,
+    marginRight: 0,
+  },
+  '&:hover': {
+    backgroundColor: '#E9F2FF',
+  },
+};
 
-// Create a theme instance.
+const buildColorScheme = (mode) => ({
+  palette: {
+    primary: COLORS[mode].primary,
+    ...STATUS_COLORS,
+    background: {
+      default: COLORS[mode].boardContent,
+      paper: COLORS[mode].card,
+    },
+    text: {
+      primary: WHITE_TEXT,
+      secondary: WHITE_TEXT,
+    },
+    appBar: {
+      main: COLORS[mode].appBar,
+    },
+    boardBar: {
+      main: COLORS[mode].boardBar,
+    },
+    boardContent: {
+      main: COLORS[mode].boardContent,
+    },
+    column: {
+      main: COLORS[mode].column,
+      header: COLORS[mode].columnHeader,
+    },
+    card: {
+      main: COLORS[mode].card,
+    },
+  },
+});
+
 const theme = createTheme({
   trelloCustom: {
     appBarHeight: '45px',
@@ -193,9 +312,11 @@ const theme = createTheme({
         '& .MuiAvatar-root': {
           width: 28,
           height: 28,
-          fontSize: 12,
           border: '2px solid',
           borderColor: 'boardBar.main',
+        },
+        '& .MuiSvgIcon-root': {
+          fontSize: 16,
         },
       },
       desktopOnly: {
@@ -210,113 +331,15 @@ const theme = createTheme({
     },
   },
   cssVariables: {
-    colorSchemeSelector: 'class'
+    colorSchemeSelector: 'class',
   },
   defaultColorScheme: 'light',
   colorSchemes: {
-    light: {
-      palette: {
-        primary: {
-          main: TRELLO_COLORS.primaryLight,        // #0079BF - Trello blue
-          light: '#4FC3F7',
-          dark: '#01579B',
-        },
-        secondary: {
-          main: '#FF9800',
-        },
-        error: {
-          main: '#EB5A46',     // Trello red
-        },
-        warning: {
-          main: '#F2D600',     // Trello yellow
-        },
-        success: {
-          main: '#61BD4F',     // Trello green
-        },
-        info: {
-          main: '#00C2E0',     // Trello teal
-        },
-        background: {
-          default: TRELLO_COLORS.boardContentLight,
-          paper: TRELLO_COLORS.cardLight,
-        },
-        text: {
-          primary: TRELLO_COLORS.textPrimaryLight,
-          secondary: TRELLO_COLORS.textSecondaryLight,
-        },
-        // -- Custom colors (access via theme.palette.xxx) --
-        appBar: {
-          main: TRELLO_COLORS.appBarLight,
-        },
-        boardBar: {
-          main: TRELLO_COLORS.boardBarLight,
-        },
-        boardContent: {
-          main: TRELLO_COLORS.boardContentLight,
-        },
-        column: {
-          main: TRELLO_COLORS.columnLight,
-          header: TRELLO_COLORS.columnHeaderLight,
-        },
-        card: {
-          main: TRELLO_COLORS.cardLight,
-        },
-      }
-    },
-    dark: {
-      palette: {
-        primary: {
-          main: TRELLO_COLORS.primaryDark,         // #579DFF
-          light: '#85B8FF',
-          dark: '#388BFD',
-        },
-        secondary: {
-          main: '#FFA726',
-        },
-        error: {
-          main: '#EF5350',
-        },
-        warning: {
-          main: '#FDD835',
-        },
-        success: {
-          main: '#66BB6A',
-        },
-        info: {
-          main: '#29B6F6',
-        },
-        background: {
-          default: '#1D2125',
-          paper: TRELLO_COLORS.cardDark,
-        },
-        text: {
-          primary: TRELLO_COLORS.textPrimaryDark,
-          secondary: TRELLO_COLORS.textSecondaryDark,
-        },
-        // -- Custom colors (access via theme.palette.xxx) --
-        appBar: {
-          main: TRELLO_COLORS.appBarDark,
-        },
-        boardBar: {
-          main: TRELLO_COLORS.boardBarDark,
-        },
-        boardContent: {
-          main: TRELLO_COLORS.boardContentDark,
-        },
-        column: {
-          main: TRELLO_COLORS.columnDark,
-          header: TRELLO_COLORS.columnHeaderDark,
-        },
-        card: {
-          main: TRELLO_COLORS.cardDark,
-        },
-      }
-    }
+    light: buildColorScheme('light'),
+    dark: buildColorScheme('dark'),
   },
-  // -- Shared component overrides & typography --
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    // Tạo variant nhỏ hơn cho labels, badges
     caption: {
       fontSize: '0.75rem',
       fontWeight: 500,
@@ -325,7 +348,6 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        // Scrollbar custom cho cả trang
         '*::-webkit-scrollbar': {
           width: '8px',
           height: '8px',
@@ -342,111 +364,26 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: 'none', // Trello không dùng uppercase cho button
+          textTransform: 'none',
           fontWeight: 500,
         },
       },
       variants: [
         {
           props: { variant: 'appBarMenu' },
-          style: {
-            color: '#FFFFFF',
-            paddingInline: '6px',
-            minWidth: 'auto',
-            height: 30,
-            fontSize: '0.8125rem',
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            display: 'none',
-            '& .MuiButton-startIcon': {
-              marginLeft: 0,
-              marginRight: 4,
-            },
-            '& .MuiButton-endIcon': {
-              marginLeft: 2,
-              marginRight: 0,
-            },
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            },
-            '@media (min-width:900px)': {
-              display: 'inline-flex',
-            },
-          },
+          style: APP_BAR_MENU_BUTTON,
         },
         {
           props: { variant: 'appBarCreate' },
-          style: {
-            color: '#FFFFFF',
-            paddingInline: '8px',
-            minWidth: 'auto',
-            height: 30,
-            fontSize: '0.8125rem',
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            display: 'none',
-            '& .MuiButton-startIcon': {
-              marginLeft: 0,
-              marginRight: 4,
-            },
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-            },
-            '@media (min-width:600px)': {
-              display: 'inline-flex',
-            },
-          },
+          style: APP_BAR_CREATE_BUTTON,
         },
         {
           props: { variant: 'boardBarAction' },
-          style: {
-            color: '#FFFFFF',
-            paddingInline: '8px',
-            minWidth: 'auto',
-            height: 32,
-            borderRadius: 8,
-            fontSize: '0.8125rem',
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            backgroundColor: 'rgba(255, 255, 255, 0.12)',
-            '& .MuiButton-startIcon': {
-              marginLeft: 0,
-              marginRight: 4,
-            },
-            '& .MuiButton-endIcon': {
-              marginLeft: 2,
-              marginRight: 0,
-            },
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.22)',
-            },
-          },
+          style: BOARD_BAR_ACTION_BUTTON,
         },
         {
           props: { variant: 'boardBarInvite' },
-          style: {
-            color: '#172B4D',
-            paddingInline: '10px',
-            minWidth: 'auto',
-            height: 32,
-            borderRadius: 8,
-            fontSize: '0.8125rem',
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            backgroundColor: '#FFFFFF',
-            '& .MuiButton-startIcon': {
-              marginLeft: 0,
-              marginRight: 4,
-            },
-            '& .MuiButton-endIcon': {
-              marginLeft: 2,
-              marginRight: 0,
-            },
-            '&:hover': {
-              backgroundColor: '#E9F2FF',
-            },
-          },
+          style: BOARD_BAR_INVITE_BUTTON,
         },
       ],
     },
@@ -464,17 +401,26 @@ const theme = createTheme({
         },
       },
     },
-    MuiTypography: {
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#1D2125',
+          color: WHITE_TEXT,
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+        },
+      },
+    },
+    MuiMenuItem: {
       styleOverrides: {
         root: {
-          // Để chống overflow text ngoài box
-          '&.MuiTypography-body1': {
-            fontSize: '0.875rem',
+          color: WHITE_TEXT,
+          '& .MuiListItemIcon-root': {
+            color: WHITE_TEXT,
           },
         },
       },
     },
   },
-})
+});
 
-export default theme
+export default theme;

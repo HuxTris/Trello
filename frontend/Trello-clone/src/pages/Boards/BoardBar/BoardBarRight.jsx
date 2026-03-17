@@ -12,9 +12,20 @@ import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined';
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
+import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
+import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
 import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
 
-const BOARD_MEMBERS = ['AL', 'HN', 'MK', 'PT', 'QH'];
+const BOARD_MEMBERS = [
+  { id: 'dev', icon: CodeOutlinedIcon, color: '#1976D2' },
+  { id: 'design', icon: PaletteOutlinedIcon, color: '#8E24AA' },
+  { id: 'marketing', icon: CampaignOutlinedIcon, color: '#F57C00' },
+  { id: 'data', icon: InsightsOutlinedIcon, color: '#00897B' },
+  { id: 'support', icon: SupportAgentOutlinedIcon, color: '#5D4037' },
+];
 
 const INVITE_ITEMS = [
   { id: 'invite-email', label: 'Invite by email', icon: PersonAddAlt1OutlinedIcon },
@@ -44,8 +55,10 @@ function BoardBarRight() {
   return (
     <Box sx={(theme) => theme.trelloCustom.boardBar.rightSection}>
       <AvatarGroup max={4} sx={(theme) => ({ ...theme.trelloCustom.boardBar.members, ...theme.trelloCustom.boardBar.smUpOnly })}>
-        {BOARD_MEMBERS.map((member) => (
-          <Avatar key={member}>{member}</Avatar>
+        {BOARD_MEMBERS.map(({ id, icon: IconComponent, color }) => (
+          <Avatar key={id} sx={{ bgcolor: color, color: '#FFFFFF' }}>
+            <IconComponent fontSize="inherit" />
+          </Avatar>
         ))}
       </AvatarGroup>
 
