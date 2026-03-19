@@ -1,7 +1,17 @@
 import { createTheme } from '@mui/material/styles';
 
 const WHITE_TEXT = '#FFFFFF';
-
+const TEXT_COLORS = {
+  light: {
+    primary: '#172B4D',
+    secondary: '#44546F',
+  },
+  dark: {
+    primary: '#ffffff',
+    secondary: '#9FADBC',
+  },
+};
+// Original Trello Color following Design Mode
 const COLORS = {
   light: {
     primary: { main: '#0079BF', light: '#4FC3F7', dark: '#01579B' },
@@ -23,6 +33,7 @@ const COLORS = {
   },
 };
 
+// Semantic colors for status labels
 const STATUS_COLORS = {
   secondary: { main: '#FF9800' },
   error: { main: '#EB5A46' },
@@ -133,8 +144,8 @@ const buildColorScheme = (mode) => ({
       paper: COLORS[mode].card,
     },
     text: {
-      primary: WHITE_TEXT,
-      secondary: WHITE_TEXT,
+      primary: TEXT_COLORS[mode].primary,
+      secondary: TEXT_COLORS[mode].secondary,
     },
     appBar: {
       main: COLORS[mode].appBar,
