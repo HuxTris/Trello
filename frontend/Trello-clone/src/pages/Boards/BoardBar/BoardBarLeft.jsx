@@ -10,6 +10,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
+import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined';
 import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
 
 const PRIVATE_ITEMS = [
@@ -24,10 +25,39 @@ const VISIBILITY_ITEMS = [
   { id: 'change-visibility', label: 'Change visibility', icon: EditOutlinedIcon },
 ];
 
-function BoardBarLeft() {
+function BoardBarLeft({ boardTitle, boardList = [], boardId, onChangeBoard }) {
+  const boardSwitchItems = (boardList || []).map((board) => ({
+    id: `switch-${board.id}`,
+    label: board.id === boardId ? `${board.title} (Current)` : board.title,
+    icon: ViewKanbanOutlinedIcon,
+    onClick: () => onChangeBoard(board.id),
+  }));
+
   return (
     <Box sx={(theme) => theme.trelloCustom.boardBar.leftSection}>
-      <Typography sx={(theme) => theme.trelloCustom.boardBar.title}>HuxTris Workspace</Typography>
+      <MuiDropdownMenu
+        items={boardSwitchItems}
+        minWidth={260}
+        renderTrigger={({ triggerProps }) => (
+          <Button
+            size="small"
+            sx={{
+              minWidth: 'auto',
+              px: 0.5,
+              color: 'common.white',
+              textTransform: 'none',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.12)' },
+            }}
+            startIcon={<ViewKanbanOutlinedIcon fontSize="small" />}
+            endIcon={<KeyboardArrowDownOutlinedIcon fontSize="small" />}
+            {...triggerProps}
+          >
+            <Typography sx={(theme) => theme.trelloCustom.boardBar.title}>
+              {boardTitle || 'Loading board...'}
+            </Typography>
+          </Button>
+        )}
+      />
 
       <Tooltip title="Star this board">
         <IconButton size="small" sx={(theme) => theme.trelloCustom.boardBar.iconButton}>

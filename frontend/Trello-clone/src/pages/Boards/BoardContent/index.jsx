@@ -18,11 +18,11 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import boardApi from '../../../apis/boardApi';
 import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
+import { mapOrder } from '../../../utils/sorts';
 import CardDetailDialog from './CardDetailDialog';
 import ConfirmDialog from './ConfirmDialog';
 import RenameColumnDialog from './RenameColumnDialog';
 
-const BOARD_ID = 'board-1';
 const COLUMN_HEADER_HEIGHT = 52;
 const COLUMN_FOOTER_HEIGHT = 52;
 const COLUMN_WIDTH = 300;
@@ -51,7 +51,7 @@ const INITIAL_CONFIRM_DIALOG = {
   confirmLabel: 'Confirm',
 };
 
-function BoardContent() {
+function BoardContent({ boardId, onBoardLoaded }) {
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -67,23 +67,43 @@ function BoardContent() {
   const [renameDialog, setRenameDialog] = useState(INITIAL_RENAME_DIALOG);
   const [confirmDialog, setConfirmDialog] = useState(INITIAL_CONFIRM_DIALOG);
 
-  const activeCard = useMemo(() => {
-    if (!board || !activeCardId) return null;
+  const orderedColumns = useMemo(() => {
+    if (!board?.columns?.length) return [];
 
-    for (const column of board.columns) {
+    const columnOrderIds = board.columnOrderIds?.length
+      ? board.columnOrderIds
+      : board.columns.map((column) => column.id);
+
+    return mapOrder(board.columns, columnOrderIds, 'id').map((column) => {
+      const cardOrderIds = column.cardOrderIds?.length
+        ? column.cardOrderIds
+        : (column.cards || []).map((card) => card.id);
+
+      return {
+        ...column,
+        cards: mapOrder(column.cards || [], cardOrderIds, 'id'),
+      };
+    });
+  }, [board]);
+
+  const activeCard = useMemo(() => {
+    if (!orderedColumns.length || !activeCardId) return null;
+
+    for (const column of orderedColumns) {
       const card = column.cards.find((item) => item.id === activeCardId);
       if (card) return card;
     }
 
     return null;
-  }, [board, activeCardId]);
+  }, [orderedColumns, activeCardId]);
 
   const loadBoard = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await boardApi.getBoardDetail(BOARD_ID);
+      const response = await boardApi.getBoardDetail(boardId);
       setBoard(response);
+      onBoardLoaded?.(response.title);
     } catch (apiError) {
       setError(apiError.message || 'Cannot load board data');
     } finally {
@@ -92,8 +112,14 @@ function BoardContent() {
   };
 
   useEffect(() => {
+    if (!boardId) return;
+    setActiveCardId('');
+    setAddingCardColumnId('');
+    setNewCardTitle('');
+    setIsAddingColumn(false);
+    setNewColumnTitle('');
     loadBoard();
-  }, []);
+  }, [boardId]);
 
   const runMutation = async (executor) => {
     try {
@@ -123,7 +149,7 @@ function BoardContent() {
 
     await runMutation(() =>
       boardApi.createColumn({
-        boardId: BOARD_ID,
+        boardId,
         title: trimmedTitle,
       }),
     );
@@ -138,7 +164,7 @@ function BoardContent() {
 
     await runMutation(() =>
       boardApi.createCard({
-        boardId: BOARD_ID,
+        boardId,
         columnId,
         payload: {
           title: trimmedTitle,
@@ -181,7 +207,7 @@ function BoardContent() {
 
     await runMutation(() =>
       boardApi.updateColumn({
-        boardId: BOARD_ID,
+        boardId,
         columnId: renameDialog.columnId,
         patch: { title: trimmedTitle },
       }),
@@ -204,7 +230,7 @@ function BoardContent() {
   const handleMoveCard = async (cardId, targetColumnId) => {
     await runMutation(() =>
       boardApi.moveCard({
-        boardId: BOARD_ID,
+        boardId,
         cardId,
         targetColumnId,
       }),
@@ -230,7 +256,7 @@ function BoardContent() {
     if (confirmDialog.actionType === 'delete-column') {
       await runMutation(() =>
         boardApi.deleteColumn({
-          boardId: BOARD_ID,
+          boardId,
           columnId: confirmDialog.targetId,
         }),
       );
@@ -239,7 +265,7 @@ function BoardContent() {
     if (confirmDialog.actionType === 'delete-card') {
       await runMutation(() =>
         boardApi.deleteCard({
-          boardId: BOARD_ID,
+          boardId,
           cardId: confirmDialog.targetId,
         }),
       );
@@ -253,7 +279,7 @@ function BoardContent() {
 
     const saved = await runMutation(() =>
       boardApi.updateCard({
-        boardId: BOARD_ID,
+        boardId,
         cardId: activeCardId,
         patch: payload,
       }),
@@ -356,7 +382,7 @@ function BoardContent() {
             pb: 0,
           }}
         >
-        {board?.columns?.map((column) => {
+        {orderedColumns.map((column) => {
           const columnMenuItems = [
             {
               id: `add-card-${column.id}`,
@@ -459,7 +485,7 @@ function BoardContent() {
                 }}
               >
                 {column.cards.map((card) => {
-                  const moveItems = (board.columns || [])
+                  const moveItems = (orderedColumns || [])
                     .filter((item) => item.id !== column.id)
                     .map((targetColumn) => ({
                       id: `move-${card.id}-${targetColumn.id}`,
