@@ -1,14 +1,39 @@
+import { useEffect, useState } from 'react';
 import Container from '@mui/material/Container';
 import AppBar from '../../components/AppBar';
+import boardApi from '../../apis/boardApi';
+import { DEFAULT_BOARD_ID } from '../../utils/constant';
 import BoardBar from './BoardBar';
 import BoardContent from './BoardContent';
 
 function Board() {
+  const [boardList, setBoardList] = useState([]);
+  const [boardId, setBoardId] = useState(DEFAULT_BOARD_ID);
+  const [boardTitle, setBoardTitle] = useState('');
+
+  useEffect(() => {
+    const loadBoards = async () => {
+      const boards = await boardApi.getBoards();
+      setBoardList(boards);
+
+      if (!boards.some((board) => board.id === DEFAULT_BOARD_ID) && boards[0]?.id) {
+        setBoardId(boards[0].id);
+      }
+    };
+
+    loadBoards();
+  }, []);
+
   return (
     <Container disableGutters maxWidth={false} sx={{ height: '100vh'}}>
       <AppBar />
-      <BoardBar />
-      <BoardContent />
+      <BoardBar
+        boardTitle={boardTitle}
+        boardList={boardList}
+        boardId={boardId}
+        onChangeBoard={setBoardId}
+      />
+      <BoardContent boardId={boardId} onBoardLoaded={setBoardTitle} />
     </Container>
   )
 }
