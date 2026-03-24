@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import {
   arrayMove,
   horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
   SortableContext,
 } from '@dnd-kit/sortable';
 import Box from '@mui/material/Box';
@@ -47,9 +56,19 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [renameDialog, setRenameDialog] = useState(INITIAL_RENAME_DIALOG);
   const [confirmDialog, setConfirmDialog] = useState(INITIAL_CONFIRM_DIALOG);
+  // sử dụng useSensors để kết hợp nhiều loại sensor khác nhau (mouse, touch, keyboard) 
+  // cho tính năng drag & drop, giúp trải nghiệm người dùng tốt hơn trên cả desktop và thiết bị di động.
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
+      // Thêm activationConstraint để tránh việc kích hoạt drag quá nhạy 
+      // khi người dùng chỉ muốn click hoặc chọn một phần tử.
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
@@ -372,6 +391,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
         }}
       >
         <DndContext
+        // Using multiple sensors to support mouse, touch and keyboard interactions for drag & drop.
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleColumnDragEnd}

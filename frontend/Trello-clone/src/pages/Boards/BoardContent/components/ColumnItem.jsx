@@ -106,6 +106,8 @@ function ColumnItem({
             sx={{
               color: 'text.secondary',
               cursor: 'grab',
+              touchAction: 'none',
+              WebkitTapHighlightColor: 'transparent',
               '&:active': {
                 cursor: 'grabbing',
               },
