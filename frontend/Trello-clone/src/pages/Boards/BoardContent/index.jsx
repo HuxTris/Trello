@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+} from '@dnd-kit/sortable';
 import Box from '@mui/material/Box';
 import boardApi from '../../../apis/boardApi';
 import { mapOrder } from '../../../utils/sorts';
@@ -9,7 +15,7 @@ import { LABEL_OPTIONS } from './constants';
 import AddColumnComposer from './components/AddColumnComposer';
 import BoardContentErrorBanner from './components/BoardContentErrorBanner';
 import BoardContentLoading from './components/BoardContentLoading';
-import ColumnItem from './components/ColumnItem';
+import SortableColumnItem from './components/SortableColumnItem';
 
 const INITIAL_RENAME_DIALOG = {
   open: false,
@@ -41,6 +47,11 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [renameDialog, setRenameDialog] = useState(INITIAL_RENAME_DIALOG);
   const [confirmDialog, setConfirmDialog] = useState(INITIAL_CONFIRM_DIALOG);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+  );
 
   const orderedColumns = useMemo(() => {
     if (!board?.columns?.length) return [];
@@ -212,6 +223,53 @@ function BoardContent({ boardId, onBoardLoaded }) {
     );
   };
 
+  const handleColumnDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    if (processing || !board) return;
+
+    const currentOrderIds = orderedColumns.map((column) => column.id);
+    const oldIndex = currentOrderIds.indexOf(active.id);
+    const newIndex = currentOrderIds.indexOf(over.id);
+
+    if (oldIndex < 0 || newIndex < 0) return;
+    if (oldIndex === newIndex) return;
+
+    // Dùng arrayMove để tính toán thứ tự mới sau khi drag & drop, nhưng không cập nhật state ngay mà sẽ gọi 
+    // API để cập nhật thứ tự mới lên server, sau đó mới cập nhật state với dữ liệu trả về từ server.
+    // Việc này giúp tránh tình trạng dữ liệu bị lệch khi có nhiều người dùng cùng thao tác trên một board.
+    const nextOrderIds = arrayMove(currentOrderIds, oldIndex, newIndex);
+    const previousBoard = board;
+
+    // Optimistic update: render new column order immediately.
+    setBoard((prevBoard) =>
+      prevBoard
+        ? {
+            ...prevBoard,
+            columnOrderIds: nextOrderIds,
+          }
+        : prevBoard,
+    );
+
+    try {
+      setProcessing(true);
+      setError('');
+
+      const updatedBoard = await boardApi.moveColumn({
+        boardId,
+        columnId: active.id,
+        targetIndex: newIndex,
+      });
+
+      setBoard(updatedBoard);
+    } catch (apiError) {
+      // Rollback when API fails.
+      setBoard(previousBoard);
+      setError(apiError.message || 'Cannot reorder columns right now');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleOpenDeleteCardDialog = ({ cardId, cardTitle }) => {
     setConfirmDialog({
       open: true,
@@ -313,46 +371,57 @@ function BoardContent({ boardId, onBoardLoaded }) {
           },
         }}
       >
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'flex-start',
-            gap: 1.5,
-            height: '100%',
-            minHeight: 0,
-            pb: 0,
-          }}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleColumnDragEnd}
         >
-          {orderedColumns.map((column) => (
-            <ColumnItem
-              key={column.id}
-              column={column}
-              orderedColumns={orderedColumns}
-              isAddingCard={addingCardColumnId === column.id}
-              newCardTitle={newCardTitle}
-              processing={processing}
-              onOpenCardDetail={setActiveCardId}
-              onMoveCard={handleMoveCard}
-              onOpenRenameColumn={handleOpenRenameDialog}
-              onOpenDeleteColumn={handleOpenDeleteColumnDialog}
-              onOpenDeleteCard={handleOpenDeleteCardDialog}
-              onStartAddCard={setAddingCardColumnId}
-              onCancelAddCard={handleCancelAddCard}
-              onNewCardTitleChange={setNewCardTitle}
-              onSubmitAddCard={handleAddCard}
-            />
-          ))}
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'flex-start',
+              gap: 1.5,
+              height: '100%',
+              minHeight: 0,
+              pb: 0,
+            }}
+          >
+            <SortableContext
+              items={orderedColumns.map((column) => column.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              {orderedColumns.map((column) => (
+                <SortableColumnItem
+                  key={column.id}
+                  column={column}
+                  orderedColumns={orderedColumns}
+                  isAddingCard={addingCardColumnId === column.id}
+                  newCardTitle={newCardTitle}
+                  processing={processing}
+                  onOpenCardDetail={setActiveCardId}
+                  onMoveCard={handleMoveCard}
+                  onOpenRenameColumn={handleOpenRenameDialog}
+                  onOpenDeleteColumn={handleOpenDeleteColumnDialog}
+                  onOpenDeleteCard={handleOpenDeleteCardDialog}
+                  onStartAddCard={setAddingCardColumnId}
+                  onCancelAddCard={handleCancelAddCard}
+                  onNewCardTitleChange={setNewCardTitle}
+                  onSubmitAddCard={handleAddCard}
+                />
+              ))}
+            </SortableContext>
 
-          <AddColumnComposer
-            isAddingColumn={isAddingColumn}
-            newColumnTitle={newColumnTitle}
-            processing={processing}
-            onStartAddingColumn={() => setIsAddingColumn(true)}
-            onCancelAddingColumn={handleCancelAddColumn}
-            onSubmitColumn={handleAddColumn}
-            onNewColumnTitleChange={setNewColumnTitle}
-          />
-        </Box>
+            <AddColumnComposer
+              isAddingColumn={isAddingColumn}
+              newColumnTitle={newColumnTitle}
+              processing={processing}
+              onStartAddingColumn={() => setIsAddingColumn(true)}
+              onCancelAddingColumn={handleCancelAddColumn}
+              onSubmitColumn={handleAddColumn}
+              onNewColumnTitleChange={setNewColumnTitle}
+            />
+          </Box>
+        </DndContext>
       </Box>
 
       <CardDetailDialog

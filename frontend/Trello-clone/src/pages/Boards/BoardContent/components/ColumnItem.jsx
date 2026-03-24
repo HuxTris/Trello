@@ -1,5 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
 import Box from '@mui/material/Box';
@@ -32,6 +33,7 @@ function ColumnItem({
   onCancelAddCard,
   onNewCardTitleChange,
   onSubmitAddCard,
+  dragHandleProps,
 }) {
   const columnMenuItems = [
     {
@@ -98,16 +100,31 @@ function ColumnItem({
         >
           {column.title} ({column.cards.length})
         </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+          <IconButton
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              cursor: 'grab',
+              '&:active': {
+                cursor: 'grabbing',
+              },
+            }}
+            {...dragHandleProps}
+          >
+            <DragIndicatorOutlinedIcon fontSize="small" />
+          </IconButton>
 
-        <MuiDropdownMenu
-          items={columnMenuItems}
-          minWidth={220}
-          renderTrigger={({ triggerProps }) => (
-            <IconButton size="small" sx={{ color: 'text.secondary' }} {...triggerProps}>
-              <MoreHorizOutlinedIcon fontSize="small" />
-            </IconButton>
-          )}
-        />
+          <MuiDropdownMenu
+            items={columnMenuItems}
+            minWidth={220}
+            renderTrigger={({ triggerProps }) => (
+              <IconButton size="small" sx={{ color: 'text.secondary' }} {...triggerProps}>
+                <MoreHorizOutlinedIcon fontSize="small" />
+              </IconButton>
+            )}
+          />
+        </Box>
       </Box>
 
       <Box

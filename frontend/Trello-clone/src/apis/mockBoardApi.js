@@ -168,6 +168,26 @@ export const createCard = async ({ boardId, columnId, payload }) => {
   return returnBoardSnapshot(boardId);
 };
 
+export const moveColumn = async ({ boardId, columnId, targetIndex = 0 }) => {
+  getBoardOrThrow(boardId);
+  const column = getColumnOrThrow(columnId);
+  ensureColumnBelongsToBoard(column, boardId);
+
+  const orderedColumnIds = selectColumnsByBoard(mockDb, boardId).map((item) => item.id);
+  const currentIndex = orderedColumnIds.indexOf(columnId);
+  if (currentIndex < 0) throw new Error(`Column ${columnId} not found in board ${boardId}`);
+
+  const nextOrderedColumnIds = orderedColumnIds.filter((id) => id !== columnId);
+  const safeIndex = Math.max(0, Math.min(targetIndex, nextOrderedColumnIds.length));
+  nextOrderedColumnIds.splice(safeIndex, 0, columnId);
+
+  nextOrderedColumnIds.forEach((id, index) => {
+    mockDb.columns[id].position = index;
+  });
+
+  return returnBoardSnapshot(boardId);
+};
+
 export const updateCard = async ({ boardId, cardId, patch }) => {
   getBoardOrThrow(boardId);
   const card = getCardOrThrow(cardId);
