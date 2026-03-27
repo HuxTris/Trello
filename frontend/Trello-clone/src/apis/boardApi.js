@@ -8,6 +8,7 @@ import {
   getCardsByColumn,
   getColumnsByBoard,
   moveCard,
+  moveColumn,
   updateCard,
   updateColumn,
 } from './mockBoardApi';
@@ -26,6 +27,7 @@ const boardApi = {
   updateCard,
   deleteCard,
   moveCard,
+  moveColumn,
 };
 
 export default boardApi;

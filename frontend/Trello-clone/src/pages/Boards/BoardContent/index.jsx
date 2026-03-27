@@ -1,40 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
-import AddIcon from '@mui/icons-material/Add';
-import AttachmentOutlinedIcon from '@mui/icons-material/AttachmentOutlined';
-import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import DriveFileMoveOutlinedIcon from '@mui/icons-material/DriveFileMoveOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
-import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined';
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  SortableContext,
+} from '@dnd-kit/sortable';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
-import Skeleton from '@mui/material/Skeleton';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import boardApi from '../../../apis/boardApi';
-import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
 import { mapOrder } from '../../../utils/sorts';
 import CardDetailDialog from './CardDetailDialog';
 import ConfirmDialog from './ConfirmDialog';
 import RenameColumnDialog from './RenameColumnDialog';
-
-const COLUMN_HEADER_HEIGHT = 52;
-const COLUMN_FOOTER_HEIGHT = 52;
-const COLUMN_WIDTH = 300;
-const COLUMN_BOTTOM_GAP = 5;
-
-const LABEL_OPTIONS = [
-  { id: 'secondary', label: 'Feature' },
-  { id: 'error', label: 'High Priority' },
-  { id: 'warning', label: 'Needs Review' },
-  { id: 'success', label: 'Done' },
-  { id: 'info', label: 'Info' },
-];
+import { LABEL_OPTIONS } from './constants';
+import AddColumnComposer from './components/AddColumnComposer';
+import BoardContentErrorBanner from './components/BoardContentErrorBanner';
+import BoardContentLoading from './components/BoardContentLoading';
+import SortableColumnItem from './components/SortableColumnItem';
 
 const INITIAL_RENAME_DIALOG = {
   open: false,
@@ -66,6 +56,21 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [renameDialog, setRenameDialog] = useState(INITIAL_RENAME_DIALOG);
   const [confirmDialog, setConfirmDialog] = useState(INITIAL_CONFIRM_DIALOG);
+  // sử dụng useSensors để kết hợp nhiều loại sensor khác nhau (mouse, touch, keyboard) 
+  // cho tính năng drag & drop, giúp trải nghiệm người dùng tốt hơn trên cả desktop và thiết bị di động.
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      // Thêm activationConstraint để tránh việc kích hoạt drag quá nhạy 
+      // khi người dùng chỉ muốn click hoặc chọn một phần tử.
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const orderedColumns = useMemo(() => {
     if (!board?.columns?.length) return [];
@@ -237,6 +242,53 @@ function BoardContent({ boardId, onBoardLoaded }) {
     );
   };
 
+  const handleColumnDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    if (processing || !board) return;
+
+    const currentOrderIds = orderedColumns.map((column) => column.id);
+    const oldIndex = currentOrderIds.indexOf(active.id);
+    const newIndex = currentOrderIds.indexOf(over.id);
+
+    if (oldIndex < 0 || newIndex < 0) return;
+    if (oldIndex === newIndex) return;
+
+    // Dùng arrayMove để tính toán thứ tự mới sau khi drag & drop, nhưng không cập nhật state ngay mà sẽ gọi 
+    // API để cập nhật thứ tự mới lên server, sau đó mới cập nhật state với dữ liệu trả về từ server.
+    // Việc này giúp tránh tình trạng dữ liệu bị lệch khi có nhiều người dùng cùng thao tác trên một board.
+    const nextOrderIds = arrayMove(currentOrderIds, oldIndex, newIndex);
+    const previousBoard = board;
+
+    // Optimistic update: render new column order immediately.
+    setBoard((prevBoard) =>
+      prevBoard
+        ? {
+            ...prevBoard,
+            columnOrderIds: nextOrderIds,
+          }
+        : prevBoard,
+    );
+
+    try {
+      setProcessing(true);
+      setError('');
+
+      const updatedBoard = await boardApi.moveColumn({
+        boardId,
+        columnId: active.id,
+        targetIndex: newIndex,
+      });
+
+      setBoard(updatedBoard);
+    } catch (apiError) {
+      // Rollback when API fails.
+      setBoard(previousBoard);
+      setError(apiError.message || 'Cannot reorder columns right now');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleOpenDeleteCardDialog = ({ cardId, cardTitle }) => {
     setConfirmDialog({
       open: true,
@@ -290,32 +342,18 @@ function BoardContent({ boardId, onBoardLoaded }) {
     }
   };
 
+  const handleCancelAddCard = () => {
+    setAddingCardColumnId('');
+    setNewCardTitle('');
+  };
+
+  const handleCancelAddColumn = () => {
+    setIsAddingColumn(false);
+    setNewColumnTitle('');
+  };
+
   if (loading) {
-    return (
-      <Box
-        sx={{
-          bgcolor: 'primary.main',
-          width: '100%',
-          px: { xs: 1, md: 2 },
-          py: 1.5,
-          display: 'flex',
-          gap: 1.5,
-          height: (theme) => ({
-            xs: `calc(100vh - ${theme.trelloCustom.appBarMobileHeight} - ${theme.trelloCustom.boardBarMobileHeight})`,
-            md: `calc(100vh - ${theme.trelloCustom.appBarHeight} - ${theme.trelloCustom.boardBarHeight})`,
-          }),
-          overflowX: 'auto',
-        }}
-      >
-        {[1, 2, 3].map((item) => (
-          <Box key={item} sx={{ minWidth: COLUMN_WIDTH, bgcolor: 'column.main', borderRadius: 2, p: 1 }}>
-            <Skeleton variant="text" height={36} sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
-            <Skeleton variant="rounded" height={80} sx={{ mb: 1, bgcolor: 'rgba(255,255,255,0.25)' }} />
-            <Skeleton variant="rounded" height={80} sx={{ bgcolor: 'rgba(255,255,255,0.25)' }} />
-          </Box>
-        ))}
-      </Box>
-    );
+    return <BoardContentLoading />;
   }
 
   return (
@@ -335,27 +373,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
         overflow: 'hidden',
       }}
     >
-      {error ? (
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          sx={{
-            mb: 1.5,
-            p: 1,
-            borderRadius: 1.5,
-            bgcolor: 'rgba(0, 0, 0, 0.2)',
-            color: 'common.white',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body2" sx={{ flex: 1 }}>
-            {error}
-          </Typography>
-          <Button size="small" variant="contained" onClick={loadBoard}>
-            Retry
-          </Button>
-        </Stack>
-      ) : null}
+      {error ? <BoardContentErrorBanner errorMessage={error} onRetry={loadBoard} /> : null}
 
       <Box
         sx={{
@@ -372,398 +390,58 @@ function BoardContent({ boardId, onBoardLoaded }) {
           },
         }}
       >
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'flex-start',
-            gap: 1.5,
-            height: '100%',
-            minHeight: 0,
-            pb: 0,
-          }}
+        <DndContext
+        // Using multiple sensors to support mouse, touch and keyboard interactions for drag & drop.
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleColumnDragEnd}
         >
-        {orderedColumns.map((column) => {
-          const columnMenuItems = [
-            {
-              id: `add-card-${column.id}`,
-              label: 'Add card',
-              icon: AddIcon,
-              onClick: () => setAddingCardColumnId(column.id),
-            },
-            {
-              id: `rename-column-${column.id}`,
-              label: 'Rename column',
-              icon: EditOutlinedIcon,
-              onClick: () => handleOpenRenameDialog(column),
-            },
-            {
-              id: `delete-column-${column.id}`,
-              label: 'Delete column',
-              icon: DeleteOutlineOutlinedIcon,
-              onClick: () => handleOpenDeleteColumnDialog(column),
-            },
-          ];
-
-          return (
-            <Box
-              key={column.id}
-              sx={{
-                minWidth: COLUMN_WIDTH,
-                maxWidth: COLUMN_WIDTH,
-                height: 'fit-content',
-                maxHeight: `calc(100% - ${COLUMN_BOTTOM_GAP}px)`,
-                alignSelf: 'flex-start',
-                minHeight: 0,
-                borderRadius: 2,
-                bgcolor: 'column.main',
-                color: 'text.primary',
-                boxShadow: '0 1px 0 rgba(9, 30, 66, 0.2)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'flex-start',
+              gap: 1.5,
+              height: '100%',
+              minHeight: 0,
+              pb: 0,
+            }}
+          >
+            <SortableContext
+              items={orderedColumns.map((column) => column.id)}
+              strategy={horizontalListSortingStrategy}
             >
-              <Box
-                sx={{
-                  height: COLUMN_HEADER_HEIGHT,
-                  minHeight: COLUMN_HEADER_HEIGHT,
-                  flexShrink: 0,
-                  px: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: '1px solid',
-                  borderColor: 'rgba(9, 30, 66, 0.12)',
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: 'column.header',
-                    fontWeight: 700,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    pr: 1,
-                  }}
-                >
-                  {column.title} ({column.cards.length})
-                </Typography>
-
-                <MuiDropdownMenu
-                  items={columnMenuItems}
-                  minWidth={220}
-                  renderTrigger={({ triggerProps }) => (
-                    <IconButton
-                      size="small"
-                      sx={{ color: 'text.secondary' }}
-                      {...triggerProps}
-                    >
-                      <MoreHorizOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  )}
+              {orderedColumns.map((column) => (
+                <SortableColumnItem
+                  key={column.id}
+                  column={column}
+                  orderedColumns={orderedColumns}
+                  isAddingCard={addingCardColumnId === column.id}
+                  newCardTitle={newCardTitle}
+                  processing={processing}
+                  onOpenCardDetail={setActiveCardId}
+                  onMoveCard={handleMoveCard}
+                  onOpenRenameColumn={handleOpenRenameDialog}
+                  onOpenDeleteColumn={handleOpenDeleteColumnDialog}
+                  onOpenDeleteCard={handleOpenDeleteCardDialog}
+                  onStartAddCard={setAddingCardColumnId}
+                  onCancelAddCard={handleCancelAddCard}
+                  onNewCardTitleChange={setNewCardTitle}
+                  onSubmitAddCard={handleAddCard}
                 />
-              </Box>
+              ))}
+            </SortableContext>
 
-              <Box
-                sx={{
-                  p: 1,
-                  flex: 1,
-                  minHeight: 0,
-                  overflowY: 'auto',
-                  overflowX: 'hidden',
-                  '&::-webkit-scrollbar': {
-                    width: 8,
-                  },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'rgba(9, 30, 66, 0.25)',
-                    borderRadius: 8,
-                  },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
-                }}
-              >
-                {column.cards.map((card) => {
-                  const moveItems = (orderedColumns || [])
-                    .filter((item) => item.id !== column.id)
-                    .map((targetColumn) => ({
-                      id: `move-${card.id}-${targetColumn.id}`,
-                      label: `Move to ${targetColumn.title}`,
-                      icon: DriveFileMoveOutlinedIcon,
-                      onClick: () => handleMoveCard(card.id, targetColumn.id),
-                    }));
-
-                  const cardMenuItems = [
-                    {
-                      id: `detail-${card.id}`,
-                      label: 'Open detail',
-                      icon: ViewKanbanOutlinedIcon,
-                      onClick: () => setActiveCardId(card.id),
-                    },
-                    ...moveItems,
-                    {
-                      id: `delete-${card.id}`,
-                      label: 'Delete card',
-                      icon: DeleteOutlineOutlinedIcon,
-                      onClick: () =>
-                        handleOpenDeleteCardDialog({
-                          cardId: card.id,
-                          cardTitle: card.title,
-                        }),
-                    },
-                  ];
-
-                  return (
-                    <Card
-                      key={card.id}
-                      variant="outlined"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setActiveCardId(card.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          setActiveCardId(card.id);
-                        }
-                      }}
-                      sx={{
-                        borderRadius: 1.5,
-                        bgcolor: 'card.main',
-                        borderColor: 'rgba(9, 30, 66, 0.12)',
-                        boxShadow: '0 1px 0 rgba(9, 30, 66, 0.14)',
-                        flexShrink: 0,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                        },
-                      }}
-                    >
-                      <CardContent
-                        sx={{
-                          p: 1.25,
-                          '&:last-child': { pb: 1.25 },
-                          display: 'flex',
-                          flexDirection: 'column',
-                          minHeight: 0,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-                          <Box sx={{ display: 'flex', gap: 0.5, mb: 0.75, flexWrap: 'wrap' }}>
-                            {(card.labels || []).map((label) => (
-                              <Box
-                                key={`${card.id}-${label}`}
-                                sx={{
-                                  width: 36,
-                                  height: 8,
-                                  borderRadius: 99,
-                                  bgcolor: `${label}.main`,
-                                }}
-                              />
-                            ))}
-                          </Box>
-
-                          <MuiDropdownMenu
-                            items={cardMenuItems}
-                            minWidth={240}
-                            renderTrigger={({ triggerProps }) => (
-                              <IconButton
-                                size="small"
-                                {...triggerProps}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  triggerProps.onClick(event);
-                                }}
-                                sx={{
-                                  color: 'text.secondary',
-                                  mt: -0.5,
-                                  mr: -0.5,
-                                }}
-                              >
-                                <MoreHorizOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            )}
-                          />
-                        </Box>
-
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: 'text.primary',
-                            fontWeight: 500,
-                            lineHeight: 1.35,
-                            mb: 1,
-                          }}
-                        >
-                          {card.title}
-                        </Typography>
-
-                        {card.description ? (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: 'text.secondary',
-                              mb: 1,
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            {card.description}
-                          </Typography>
-                        ) : null}
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, color: 'text.secondary', flexWrap: 'wrap' }}>
-                          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.35 }}>
-                            <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: 15 }} />
-                            <Typography variant="caption" sx={{ color: 'inherit', fontWeight: 500 }}>
-                              {card.comments}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.35 }}>
-                            <AttachmentOutlinedIcon sx={{ fontSize: 15 }} />
-                            <Typography variant="caption" sx={{ color: 'inherit', fontWeight: 500 }}>
-                              {card.attachments}
-                            </Typography>
-                          </Box>
-                          {card.dueDate ? (
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              Due: {card.dueDate}
-                            </Typography>
-                          ) : null}
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </Box>
-
-              <Box
-                sx={{
-                  minHeight: COLUMN_FOOTER_HEIGHT,
-                  flexShrink: 0,
-                  px: 0.75,
-                  py: 0.5,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                {addingCardColumnId === column.id ? (
-                  <Stack spacing={1} sx={{ width: '100%' }}>
-                    <TextField
-                      size="small"
-                      placeholder="Enter card title..."
-                      value={newCardTitle}
-                      onChange={(event) => setNewCardTitle(event.target.value)}
-                      autoFocus
-                    />
-                    <Stack direction="row" spacing={1}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => handleAddCard(column.id)}
-                        disabled={!newCardTitle.trim() || processing}
-                      >
-                        Add card
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          setAddingCardColumnId('');
-                          setNewCardTitle('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </Stack>
-                  </Stack>
-                ) : (
-                  <Button
-                    startIcon={<AddIcon />}
-                    sx={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      color: 'text.secondary',
-                      borderRadius: 1,
-                      textTransform: 'none',
-                      '&:hover': {
-                        bgcolor: 'rgba(9, 30, 66, 0.08)',
-                      },
-                    }}
-                    onClick={() => setAddingCardColumnId(column.id)}
-                  >
-                    Add a card
-                  </Button>
-                )}
-              </Box>
-            </Box>
-          );
-        })}
-
-        <Box
-          sx={{
-            minWidth: COLUMN_WIDTH,
-            maxWidth: COLUMN_WIDTH,
-            alignSelf: 'flex-start',
-            height: 'fit-content',
-            borderRadius: 2,
-            bgcolor: 'rgba(255, 255, 255, 0.24)',
-            p: 0.75,
-          }}
-        >
-          {isAddingColumn ? (
-            <Stack spacing={1}>
-              <TextField
-                size="small"
-                placeholder="Enter list title..."
-                value={newColumnTitle}
-                onChange={(event) => setNewColumnTitle(event.target.value)}
-                autoFocus
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: 'common.white',
-                  },
-                }}
-              />
-              <Stack direction="row" spacing={1}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={handleAddColumn}
-                  disabled={!newColumnTitle.trim() || processing}
-                >
-                  Add list
-                </Button>
-                <Button
-                  size="small"
-                  sx={{ color: 'common.white' }}
-                  onClick={() => {
-                    setIsAddingColumn(false);
-                    setNewColumnTitle('');
-                  }}
-                >
-                  Cancel
-                </Button>
-              </Stack>
-            </Stack>
-          ) : (
-            <Button
-              startIcon={<AddIcon />}
-              sx={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                color: 'common.white',
-                textTransform: 'none',
-                borderRadius: 1.5,
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.22)',
-                },
-              }}
-              onClick={() => setIsAddingColumn(true)}
-            >
-              Add another list
-            </Button>
-          )}
-        </Box>
-        </Box>
+            <AddColumnComposer
+              isAddingColumn={isAddingColumn}
+              newColumnTitle={newColumnTitle}
+              processing={processing}
+              onStartAddingColumn={() => setIsAddingColumn(true)}
+              onCancelAddingColumn={handleCancelAddColumn}
+              onSubmitColumn={handleAddColumn}
+              onNewColumnTitleChange={setNewColumnTitle}
+            />
+          </Box>
+        </DndContext>
       </Box>
 
       <CardDetailDialog
