@@ -1,14 +1,18 @@
 import Box from '@mui/material/Box';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import ColumnItem from './ColumnItem';
+import CardItem from './CardItem';
 
-function SortableColumnItem(props) {
-  const { column } = props;
+function SortableCardItem(props) {
+  const { card, columnId } = props;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: column.id,
-    data: { type: 'COLUMN', columnId: column.id },
+    id: card.id,
+    data: {
+      type: 'CARD',
+      cardId: card.id,
+      columnId,
+    },
   });
 
   return (
@@ -17,12 +21,13 @@ function SortableColumnItem(props) {
       sx={{
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.6 : 1,
+        zIndex: isDragging ? 1 : 'auto',
       }}
     >
-      <ColumnItem
+      <CardItem
         {...props}
-        dragHandleProps={{
+        isDragging={isDragging}
+        dragProps={{
           ...attributes,
           ...listeners,
         }}
@@ -31,4 +36,4 @@ function SortableColumnItem(props) {
   );
 }
 
-export default SortableColumnItem;
+export default SortableCardItem;

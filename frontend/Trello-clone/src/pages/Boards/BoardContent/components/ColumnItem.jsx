@@ -1,4 +1,5 @@
 import AddIcon from '@mui/icons-material/Add';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -16,7 +17,8 @@ import {
   COLUMN_HEADER_HEIGHT,
   COLUMN_WIDTH,
 } from '../constants';
-import CardItem from './CardItem';
+import CardDropZone from './CardDropZone';
+import SortableCardItem from './SortableCardItem';
 
 function ColumnItem({
   column,
@@ -34,6 +36,7 @@ function ColumnItem({
   onNewCardTitleChange,
   onSubmitAddCard,
   dragHandleProps,
+  isCardDragging,
 }) {
   const columnMenuItems = [
     {
@@ -148,17 +151,29 @@ function ColumnItem({
           gap: 1,
         }}
       >
-        {column.cards.map((card) => (
-          <CardItem
-            key={card.id}
-            card={card}
-            columnId={column.id}
-            orderedColumns={orderedColumns}
-            onOpenCardDetail={onOpenCardDetail}
-            onMoveCard={onMoveCard}
-            onOpenDeleteCard={onOpenDeleteCard}
-          />
-        ))}
+        <SortableContext
+          items={column.cards.map((card) => card.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {column.cards.map((card) => (
+            <SortableCardItem
+              key={card.id}
+              card={card}
+              columnId={column.id}
+              orderedColumns={orderedColumns}
+              onOpenCardDetail={onOpenCardDetail}
+              onMoveCard={onMoveCard}
+              onOpenDeleteCard={onOpenDeleteCard}
+            />
+          ))}
+        </SortableContext>
+
+        <CardDropZone
+          columnId={column.id}
+          index={column.cards.length}
+          isEmpty={!column.cards.length}
+          isActive={isCardDragging}
+        />
       </Box>
 
       <Box

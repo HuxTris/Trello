@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   closestCenter,
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -24,7 +25,16 @@ import { LABEL_OPTIONS } from './constants';
 import AddColumnComposer from './components/AddColumnComposer';
 import BoardContentErrorBanner from './components/BoardContentErrorBanner';
 import BoardContentLoading from './components/BoardContentLoading';
+import CardDragOverlay from './components/CardDragOverlay';
 import SortableColumnItem from './components/SortableColumnItem';
+
+const DRAG_ITEM_TYPE = {
+  COLUMN: 'COLUMN',
+  CARD: 'CARD',
+  CARD_DROP_ZONE: 'CARD_DROP_ZONE',
+};
+
+const BLOCK_CARD_CLICK_AFTER_DRAG_MS = 220;
 
 const INITIAL_RENAME_DIALOG = {
   open: false,
@@ -41,6 +51,180 @@ const INITIAL_CONFIRM_DIALOG = {
   confirmLabel: 'Confirm',
 };
 
+const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+
+const findCardLocation = (columns, cardId) => {
+  for (const column of columns) {
+    const cardIndex = column.cards.findIndex((card) => card.id === cardId);
+    if (cardIndex !== -1) {
+      return {
+        columnId: column.id,
+        cardIndex,
+      };
+    }
+  }
+
+  return null;
+};
+
+const findCardById = (columns, cardId) => {
+  for (const column of columns) {
+    const card = column.cards.find((item) => item.id === cardId);
+    if (card) return card;
+  }
+
+  return null;
+};
+
+const hasSameCardOrder = (prevColumns, nextColumns) =>
+  prevColumns.every((column, index) => {
+    const nextColumn = nextColumns[index];
+    if (!nextColumn || nextColumn.id !== column.id) return false;
+
+    const prevIds = column.cards.map((card) => card.id).join('|');
+    const nextIds = nextColumn.cards.map((card) => card.id).join('|');
+    return prevIds === nextIds;
+  });
+
+const resolveCardDropTarget = ({ over, columns }) => {
+  if (!over) return null;
+
+  const overData = over.data?.current;
+  if (!overData) return null;
+
+  if (overData.type === DRAG_ITEM_TYPE.CARD) {
+    const targetColumn = columns.find((column) => column.id === overData.columnId);
+    if (!targetColumn) return null;
+
+    const targetIndex = targetColumn.cards.findIndex((card) => card.id === overData.cardId);
+    if (targetIndex < 0) return null;
+
+    return {
+      targetColumnId: targetColumn.id,
+      targetIndex,
+    };
+  }
+
+  if (overData.type === DRAG_ITEM_TYPE.CARD_DROP_ZONE) {
+    return {
+      targetColumnId: overData.columnId,
+      targetIndex: overData.index,
+    };
+  }
+
+  if (overData.type === DRAG_ITEM_TYPE.COLUMN) {
+    const targetColumn = columns.find((column) => column.id === overData.columnId);
+    if (!targetColumn) return null;
+
+    return {
+      targetColumnId: targetColumn.id,
+      targetIndex: targetColumn.cards.length,
+    };
+  }
+
+  return null;
+};
+
+const resolveColumnDropTarget = ({ over, columns }) => {
+  if (!over) return null;
+
+  const overData = over.data?.current;
+
+  if (!overData) {
+    return columns.some((column) => column.id === over.id) ? over.id : null;
+  }
+
+  if (overData.type === DRAG_ITEM_TYPE.COLUMN) {
+    return overData.columnId || over.id;
+  }
+
+  if (overData.type === DRAG_ITEM_TYPE.CARD || overData.type === DRAG_ITEM_TYPE.CARD_DROP_ZONE) {
+    return overData.columnId || null;
+  }
+
+  return columns.some((column) => column.id === over.id) ? over.id : null;
+};
+
+const collisionDetectionStrategy = (args) => {
+  const activeType = args.active.data?.current?.type;
+
+  if (activeType === DRAG_ITEM_TYPE.COLUMN) {
+    const columnDroppableContainers = args.droppableContainers.filter((container) => {
+      const type = container.data?.current?.type;
+      return type === DRAG_ITEM_TYPE.COLUMN;
+    });
+
+    if (!columnDroppableContainers.length) {
+      return closestCenter(args);
+    }
+
+    return closestCenter({
+      ...args,
+      droppableContainers: columnDroppableContainers,
+    });
+  }
+
+  if (activeType === DRAG_ITEM_TYPE.CARD) {
+    const cardRelatedDroppableContainers = args.droppableContainers.filter((container) => {
+      const type = container.data?.current?.type;
+      return (
+        type === DRAG_ITEM_TYPE.CARD ||
+        type === DRAG_ITEM_TYPE.CARD_DROP_ZONE ||
+        type === DRAG_ITEM_TYPE.COLUMN
+      );
+    });
+
+    if (!cardRelatedDroppableContainers.length) {
+      return closestCenter(args);
+    }
+
+    return closestCenter({
+      ...args,
+      droppableContainers: cardRelatedDroppableContainers,
+    });
+  }
+
+  return closestCenter(args);
+};
+
+const buildColumnsAfterCardMove = ({ columns, cardId, sourceColumnId, targetColumnId, targetIndex }) => {
+  const nextColumns = columns.map((column) => ({
+    ...column,
+    cards: [...column.cards],
+  }));
+
+  const sourceColumn = nextColumns.find((column) => column.id === sourceColumnId);
+  const targetColumn = nextColumns.find((column) => column.id === targetColumnId);
+  if (!sourceColumn || !targetColumn) return null;
+
+  const sourceIndex = sourceColumn.cards.findIndex((card) => card.id === cardId);
+  if (sourceIndex < 0) return null;
+
+  if (sourceColumn.id === targetColumn.id) {
+    const safeIndex = clamp(targetIndex, 0, sourceColumn.cards.length);
+    sourceColumn.cards = arrayMove(sourceColumn.cards, sourceIndex, safeIndex);
+    sourceColumn.cardOrderIds = sourceColumn.cards.map((card) => card.id);
+    return {
+      nextColumns,
+      sourceIndex,
+      appliedTargetIndex: safeIndex,
+    };
+  }
+
+  const [movedCard] = sourceColumn.cards.splice(sourceIndex, 1);
+  const safeIndex = clamp(targetIndex, 0, targetColumn.cards.length);
+  targetColumn.cards.splice(safeIndex, 0, movedCard);
+
+  sourceColumn.cardOrderIds = sourceColumn.cards.map((card) => card.id);
+  targetColumn.cardOrderIds = targetColumn.cards.map((card) => card.id);
+
+  return {
+    nextColumns,
+    sourceIndex,
+    appliedTargetIndex: safeIndex,
+  };
+};
+
 function BoardContent({ boardId, onBoardLoaded }) {
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +232,8 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const [processing, setProcessing] = useState(false);
 
   const [activeCardId, setActiveCardId] = useState('');
+  const [activeDragCardId, setActiveDragCardId] = useState('');
+  const [activeDragCardData, setActiveDragCardData] = useState(null);
 
   const [addingCardColumnId, setAddingCardColumnId] = useState('');
   const [newCardTitle, setNewCardTitle] = useState('');
@@ -56,12 +242,11 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [renameDialog, setRenameDialog] = useState(INITIAL_RENAME_DIALOG);
   const [confirmDialog, setConfirmDialog] = useState(INITIAL_CONFIRM_DIALOG);
-  // sử dụng useSensors để kết hợp nhiều loại sensor khác nhau (mouse, touch, keyboard) 
-  // cho tính năng drag & drop, giúp trải nghiệm người dùng tốt hơn trên cả desktop và thiết bị di động.
+
+  const cardClickBlockUntilRef = useRef(0);
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      // Thêm activationConstraint để tránh việc kích hoạt drag quá nhạy 
-      // khi người dùng chỉ muốn click hoặc chọn một phần tử.
       activationConstraint: { distance: 8 },
     }),
     useSensor(TouchSensor, {
@@ -94,12 +279,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const activeCard = useMemo(() => {
     if (!orderedColumns.length || !activeCardId) return null;
 
-    for (const column of orderedColumns) {
-      const card = column.cards.find((item) => item.id === activeCardId);
-      if (card) return card;
-    }
-
-    return null;
+    return findCardById(orderedColumns, activeCardId);
   }, [orderedColumns, activeCardId]);
 
   const loadBoard = async () => {
@@ -119,6 +299,8 @@ function BoardContent({ boardId, onBoardLoaded }) {
   useEffect(() => {
     if (!boardId) return;
     setActiveCardId('');
+    setActiveDragCardId('');
+    setActiveDragCardData(null);
     setAddingCardColumnId('');
     setNewCardTitle('');
     setIsAddingColumn(false);
@@ -242,24 +424,37 @@ function BoardContent({ boardId, onBoardLoaded }) {
     );
   };
 
+  const handleCardOpenDetail = (cardId) => {
+    if (Date.now() < cardClickBlockUntilRef.current) return;
+    setActiveCardId(cardId);
+  };
+
+  const handleDragStart = ({ active }) => {
+    const activeData = active.data?.current;
+    if (activeData?.type !== DRAG_ITEM_TYPE.CARD) return;
+
+    const card = findCardById(orderedColumns, active.id);
+    if (!card) return;
+
+    setActiveDragCardId(active.id);
+    setActiveDragCardData(card);
+  };
+
   const handleColumnDragEnd = async ({ active, over }) => {
-    if (!over || active.id === over.id) return;
-    if (processing || !board) return;
+    if (!over) return;
 
     const currentOrderIds = orderedColumns.map((column) => column.id);
+    const targetColumnId = resolveColumnDropTarget({ over, columns: orderedColumns });
+    if (!targetColumnId || active.id === targetColumnId) return;
+
     const oldIndex = currentOrderIds.indexOf(active.id);
-    const newIndex = currentOrderIds.indexOf(over.id);
+    const newIndex = currentOrderIds.indexOf(targetColumnId);
 
-    if (oldIndex < 0 || newIndex < 0) return;
-    if (oldIndex === newIndex) return;
+    if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
 
-    // Dùng arrayMove để tính toán thứ tự mới sau khi drag & drop, nhưng không cập nhật state ngay mà sẽ gọi 
-    // API để cập nhật thứ tự mới lên server, sau đó mới cập nhật state với dữ liệu trả về từ server.
-    // Việc này giúp tránh tình trạng dữ liệu bị lệch khi có nhiều người dùng cùng thao tác trên một board.
     const nextOrderIds = arrayMove(currentOrderIds, oldIndex, newIndex);
     const previousBoard = board;
 
-    // Optimistic update: render new column order immediately.
     setBoard((prevBoard) =>
       prevBoard
         ? {
@@ -281,12 +476,95 @@ function BoardContent({ boardId, onBoardLoaded }) {
 
       setBoard(updatedBoard);
     } catch (apiError) {
-      // Rollback when API fails.
       setBoard(previousBoard);
       setError(apiError.message || 'Cannot reorder columns right now');
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleCardDragEnd = async ({ active, over }) => {
+    if (!over || !board) return;
+
+    const activeData = active.data?.current;
+    if (activeData?.type !== DRAG_ITEM_TYPE.CARD) return;
+
+    const sourceColumnId = activeData.columnId;
+    const sourceLocation = findCardLocation(orderedColumns, active.id);
+    if (!sourceLocation) return;
+
+    const target = resolveCardDropTarget({ over, columns: orderedColumns });
+    if (!target) return;
+
+    const { targetColumnId, targetIndex } = target;
+
+    const moveResult = buildColumnsAfterCardMove({
+      columns: orderedColumns,
+      cardId: active.id,
+      sourceColumnId,
+      targetColumnId,
+      targetIndex,
+    });
+
+    if (!moveResult) return;
+
+    const { nextColumns, appliedTargetIndex } = moveResult;
+    if (hasSameCardOrder(orderedColumns, nextColumns)) return;
+
+    const previousBoard = board;
+
+    setBoard((prevBoard) =>
+      prevBoard
+        ? {
+            ...prevBoard,
+            columns: nextColumns,
+          }
+        : prevBoard,
+    );
+
+    try {
+      setProcessing(true);
+      setError('');
+
+      const updatedBoard = await boardApi.moveCard({
+        boardId,
+        cardId: active.id,
+        targetColumnId,
+        targetIndex: appliedTargetIndex,
+      });
+
+      setBoard(updatedBoard);
+    } catch (apiError) {
+      setBoard(previousBoard);
+      setError(apiError.message || 'Cannot reorder cards right now');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDragEnd = async (event) => {
+    const activeData = event.active?.data?.current;
+
+    setActiveDragCardId('');
+    setActiveDragCardData(null);
+
+    if (!activeData || processing) return;
+
+    if (activeData.type === DRAG_ITEM_TYPE.COLUMN) {
+      await handleColumnDragEnd(event);
+      return;
+    }
+
+    if (activeData.type === DRAG_ITEM_TYPE.CARD) {
+      cardClickBlockUntilRef.current = Date.now() + BLOCK_CARD_CLICK_AFTER_DRAG_MS;
+      await handleCardDragEnd(event);
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragCardId('');
+    setActiveDragCardData(null);
+    cardClickBlockUntilRef.current = Date.now() + BLOCK_CARD_CLICK_AFTER_DRAG_MS;
   };
 
   const handleOpenDeleteCardDialog = ({ cardId, cardTitle }) => {
@@ -391,10 +669,11 @@ function BoardContent({ boardId, onBoardLoaded }) {
         }}
       >
         <DndContext
-        // Using multiple sensors to support mouse, touch and keyboard interactions for drag & drop.
           sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleColumnDragEnd}
+          collisionDetection={collisionDetectionStrategy}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         >
           <Box
             sx={{
@@ -418,7 +697,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
                   isAddingCard={addingCardColumnId === column.id}
                   newCardTitle={newCardTitle}
                   processing={processing}
-                  onOpenCardDetail={setActiveCardId}
+                  onOpenCardDetail={handleCardOpenDetail}
                   onMoveCard={handleMoveCard}
                   onOpenRenameColumn={handleOpenRenameDialog}
                   onOpenDeleteColumn={handleOpenDeleteColumnDialog}
@@ -427,6 +706,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
                   onCancelAddCard={handleCancelAddCard}
                   onNewCardTitleChange={setNewCardTitle}
                   onSubmitAddCard={handleAddCard}
+                  isCardDragging={Boolean(activeDragCardId)}
                 />
               ))}
             </SortableContext>
@@ -441,6 +721,10 @@ function BoardContent({ boardId, onBoardLoaded }) {
               onNewColumnTitleChange={setNewColumnTitle}
             />
           </Box>
+
+          <DragOverlay>
+            {activeDragCardId ? <CardDragOverlay card={activeDragCardData} /> : null}
+          </DragOverlay>
         </DndContext>
       </Box>
 
