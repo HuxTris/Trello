@@ -35,6 +35,7 @@ const DRAG_ITEM_TYPE = {
   CARD_DROP_ZONE: 'CARD_DROP_ZONE',
 };
 
+// Chặn click "dư âm" ngay sau drag, tránh mở card detail ngoài ý muốn.
 const BLOCK_CARD_CLICK_AFTER_DRAG_MS = 220;
 
 const INITIAL_RENAME_DIALOG = {
@@ -54,6 +55,7 @@ const INITIAL_CONFIRM_DIALOG = {
 
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
+// Tìm vị trí hiện tại của card trong toàn bộ columns (columnId + index).
 const findCardLocation = (columns, cardId) => {
   for (const column of columns) {
     const cardIndex = column.cards.findIndex((card) => card.id === cardId);
@@ -77,6 +79,7 @@ const findCardById = (columns, cardId) => {
   return null;
 };
 
+// So sánh order card giữa 2 snapshots để biết có thay đổi thật hay không.
 const hasSameCardOrder = (prevColumns, nextColumns) =>
   prevColumns.every((column, index) => {
     const nextColumn = nextColumns[index];
@@ -87,6 +90,8 @@ const hasSameCardOrder = (prevColumns, nextColumns) =>
     return prevIds === nextIds;
   });
 
+// Chuẩn hóa điểm drop của CARD thành { targetColumnId, targetIndex }.
+// over có thể là CARD, CARD_DROP_ZONE hoặc COLUMN.
 const resolveCardDropTarget = ({ over, columns }) => {
   if (!over) return null;
 
@@ -126,6 +131,8 @@ const resolveCardDropTarget = ({ over, columns }) => {
   return null;
 };
 
+// Khi kéo COLUMN, over có thể đang nằm trên CARD/CARD_DROP_ZONE.
+// Hàm này map ngược về column đích để reorder cột ổn định.
 const resolveColumnDropTarget = ({ over, columns }) => {
   if (!over) return null;
 
@@ -146,6 +153,9 @@ const resolveColumnDropTarget = ({ over, columns }) => {
   return columns.some((column) => column.id === over.id) ? over.id : null;
 };
 
+// Collision detection theo từng loại item đang kéo:
+// - Kéo COLUMN: chỉ xét va chạm với COLUMN.
+// - Kéo CARD: xét CARD + DROP_ZONE + COLUMN.
 const collisionDetectionStrategy = (args) => {
   const activeType = args.active.data?.current?.type;
 
@@ -188,6 +198,7 @@ const collisionDetectionStrategy = (args) => {
   return closestCenter(args);
 };
 
+// Tạo columns mới sau thao tác kéo CARD (không mutate state cũ).
 const buildColumnsAfterCardMove = ({ columns, cardId, sourceColumnId, targetColumnId, targetIndex }) => {
   const nextColumns = columns.map((column) => ({
     ...column,
@@ -430,6 +441,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
   };
 
   const handleCardOpenDetail = (cardId) => {
+    // Nếu vừa drag xong thì tạm thời bỏ qua click mở detail.
     if (Date.now() < cardClickBlockUntilRef.current) return;
     setActiveCardId(cardId);
   };
@@ -441,6 +453,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
     setActiveDragType(activeData.type);
 
     if (activeData.type === DRAG_ITEM_TYPE.COLUMN) {
+      // Lưu snapshot column hiện tại để render overlay kéo cột.
       const column = orderedColumns.find((item) => item.id === active.id);
       if (column) setActiveDragColumnData(column);
       return;
@@ -470,6 +483,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
     const nextOrderIds = arrayMove(currentOrderIds, oldIndex, newIndex);
     const previousBoard = board;
 
+    // Optimistic update cho column: đổi thứ tự ngay để cảm giác mượt.
     setBoard((prevBoard) =>
       prevBoard
         ? {
@@ -528,6 +542,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
 
     const previousBoard = board;
 
+    // Optimistic update cho card: UI đổi trước, API xác nhận sau.
     setBoard((prevBoard) =>
       prevBoard
         ? {
@@ -550,6 +565,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
 
       setBoard(updatedBoard);
     } catch (apiError) {
+      // API lỗi thì rollback về snapshot trước drag.
       setBoard(previousBoard);
       setError(apiError.message || 'Cannot reorder cards right now');
     } finally {
@@ -573,6 +589,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
     }
 
     if (activeData.type === DRAG_ITEM_TYPE.CARD) {
+      // Đặt mốc chặn click trước khi xử lý để tránh ghost click.
       cardClickBlockUntilRef.current = Date.now() + BLOCK_CARD_CLICK_AFTER_DRAG_MS;
       await handleCardDragEnd(event);
     }

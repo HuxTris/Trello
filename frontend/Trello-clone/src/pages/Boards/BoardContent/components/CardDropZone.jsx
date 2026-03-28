@@ -2,6 +2,8 @@ import Box from '@mui/material/Box';
 import { useDroppable } from '@dnd-kit/core';
 
 function CardDropZone({ columnId, index, isEmpty, isActive }) {
+  // Drop zone là vùng thả bổ sung để:
+  // 1) thả vào cuối list, 2) thả vào list rỗng.
   const { isOver, setNodeRef } = useDroppable({
     id: `card-drop-zone-${columnId}-${index}`,
     data: {

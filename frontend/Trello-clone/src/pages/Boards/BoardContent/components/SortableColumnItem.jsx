@@ -6,6 +6,7 @@ import ColumnItem from './ColumnItem';
 function SortableColumnItem(props) {
   const { column } = props;
 
+  // useSortable đăng ký COLUMN là item có thể sắp xếp ngang trong board.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column.id,
     data: { type: 'COLUMN', columnId: column.id },
@@ -22,6 +23,7 @@ function SortableColumnItem(props) {
     >
       <ColumnItem
         {...props}
+        // Chỉ truyền listeners vào drag handle, không kéo toàn bộ cột bằng mọi click.
         dragHandleProps={{
           ...attributes,
           ...listeners,

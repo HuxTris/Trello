@@ -21,6 +21,7 @@ function CardItem({
   dragProps,
   isDragging,
 }) {
+  // Tách onKeyDown để không bị ghi đè logic mở detail bằng Enter.
   const { onKeyDown: onDragKeyDown, ...restDragProps } = dragProps || {};
   const moveItems = (orderedColumns || [])
     .filter((item) => item.id !== columnId)

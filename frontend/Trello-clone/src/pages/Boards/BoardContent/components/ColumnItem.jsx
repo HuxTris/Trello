@@ -154,6 +154,7 @@ function ColumnItem({
           gap: 1,
         }}
       >
+        {/* overlayMode dùng cho DragOverlay: render UI tĩnh giống hệt cột thật, không gắn sortable/dropzone */}
         {overlayMode ? (
           column.cards.map((card) => (
             <CardItem
@@ -168,6 +169,7 @@ function ColumnItem({
           ))
         ) : (
           <>
+            {/* Normal mode: cards nằm trong SortableContext để kéo-thả giữa các vị trí */}
             <SortableContext
               items={column.cards.map((card) => card.id)}
               strategy={verticalListSortingStrategy}

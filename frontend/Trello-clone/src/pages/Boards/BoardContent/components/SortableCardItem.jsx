@@ -6,6 +6,7 @@ import CardItem from './CardItem';
 function SortableCardItem(props) {
   const { card, columnId, isDragDisabled } = props;
 
+  // useSortable đăng ký CARD là draggable + sortable item trong column hiện tại.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: {
@@ -13,6 +14,7 @@ function SortableCardItem(props) {
       cardId: card.id,
       columnId,
     },
+    // Khi đang kéo COLUMN thì tắt drag CARD để tránh xung đột gesture.
     disabled: isDragDisabled,
   });
 
