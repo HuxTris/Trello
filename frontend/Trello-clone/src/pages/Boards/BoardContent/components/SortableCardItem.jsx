@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import CardItem from './CardItem';
 
 function SortableCardItem(props) {
-  const { card, columnId } = props;
+  const { card, columnId, isDragDisabled } = props;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
@@ -13,6 +13,7 @@ function SortableCardItem(props) {
       cardId: card.id,
       columnId,
     },
+    disabled: isDragDisabled,
   });
 
   return (

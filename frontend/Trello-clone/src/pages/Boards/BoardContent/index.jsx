@@ -26,6 +26,7 @@ import AddColumnComposer from './components/AddColumnComposer';
 import BoardContentErrorBanner from './components/BoardContentErrorBanner';
 import BoardContentLoading from './components/BoardContentLoading';
 import CardDragOverlay from './components/CardDragOverlay';
+import ColumnDragOverlay from './components/ColumnDragOverlay';
 import SortableColumnItem from './components/SortableColumnItem';
 
 const DRAG_ITEM_TYPE = {
@@ -232,8 +233,10 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const [processing, setProcessing] = useState(false);
 
   const [activeCardId, setActiveCardId] = useState('');
+  const [activeDragType, setActiveDragType] = useState('');
   const [activeDragCardId, setActiveDragCardId] = useState('');
   const [activeDragCardData, setActiveDragCardData] = useState(null);
+  const [activeDragColumnData, setActiveDragColumnData] = useState(null);
 
   const [addingCardColumnId, setAddingCardColumnId] = useState('');
   const [newCardTitle, setNewCardTitle] = useState('');
@@ -299,8 +302,10 @@ function BoardContent({ boardId, onBoardLoaded }) {
   useEffect(() => {
     if (!boardId) return;
     setActiveCardId('');
+    setActiveDragType('');
     setActiveDragCardId('');
     setActiveDragCardData(null);
+    setActiveDragColumnData(null);
     setAddingCardColumnId('');
     setNewCardTitle('');
     setIsAddingColumn(false);
@@ -431,7 +436,17 @@ function BoardContent({ boardId, onBoardLoaded }) {
 
   const handleDragStart = ({ active }) => {
     const activeData = active.data?.current;
-    if (activeData?.type !== DRAG_ITEM_TYPE.CARD) return;
+    if (!activeData?.type) return;
+
+    setActiveDragType(activeData.type);
+
+    if (activeData.type === DRAG_ITEM_TYPE.COLUMN) {
+      const column = orderedColumns.find((item) => item.id === active.id);
+      if (column) setActiveDragColumnData(column);
+      return;
+    }
+
+    if (activeData.type !== DRAG_ITEM_TYPE.CARD) return;
 
     const card = findCardById(orderedColumns, active.id);
     if (!card) return;
@@ -545,8 +560,10 @@ function BoardContent({ boardId, onBoardLoaded }) {
   const handleDragEnd = async (event) => {
     const activeData = event.active?.data?.current;
 
+    setActiveDragType('');
     setActiveDragCardId('');
     setActiveDragCardData(null);
+    setActiveDragColumnData(null);
 
     if (!activeData || processing) return;
 
@@ -562,8 +579,10 @@ function BoardContent({ boardId, onBoardLoaded }) {
   };
 
   const handleDragCancel = () => {
+    setActiveDragType('');
     setActiveDragCardId('');
     setActiveDragCardData(null);
+    setActiveDragColumnData(null);
     cardClickBlockUntilRef.current = Date.now() + BLOCK_CARD_CLICK_AFTER_DRAG_MS;
   };
 
@@ -706,7 +725,8 @@ function BoardContent({ boardId, onBoardLoaded }) {
                   onCancelAddCard={handleCancelAddCard}
                   onNewCardTitleChange={setNewCardTitle}
                   onSubmitAddCard={handleAddCard}
-                  isCardDragging={Boolean(activeDragCardId)}
+                  isCardDragging={activeDragType === DRAG_ITEM_TYPE.CARD}
+                  isColumnDragging={activeDragType === DRAG_ITEM_TYPE.COLUMN}
                 />
               ))}
             </SortableContext>
@@ -722,8 +742,11 @@ function BoardContent({ boardId, onBoardLoaded }) {
             />
           </Box>
 
-          <DragOverlay>
-            {activeDragCardId ? <CardDragOverlay card={activeDragCardData} /> : null}
+          <DragOverlay adjustScale={false}>
+            {activeDragType === DRAG_ITEM_TYPE.CARD ? <CardDragOverlay card={activeDragCardData} /> : null}
+            {activeDragType === DRAG_ITEM_TYPE.COLUMN ? (
+              <ColumnDragOverlay column={activeDragColumnData} orderedColumns={orderedColumns} />
+            ) : null}
           </DragOverlay>
         </DndContext>
       </Box>

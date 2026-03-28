@@ -17,7 +17,7 @@ function SortableColumnItem(props) {
       sx={{
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.6 : 1,
+        opacity: isDragging ? 0 : 1,
       }}
     >
       <ColumnItem

@@ -17,6 +17,7 @@ import {
   COLUMN_HEADER_HEIGHT,
   COLUMN_WIDTH,
 } from '../constants';
+import CardItem from './CardItem';
 import CardDropZone from './CardDropZone';
 import SortableCardItem from './SortableCardItem';
 
@@ -37,6 +38,8 @@ function ColumnItem({
   onSubmitAddCard,
   dragHandleProps,
   isCardDragging,
+  isColumnDragging,
+  overlayMode = false,
 }) {
   const columnMenuItems = [
     {
@@ -151,12 +154,9 @@ function ColumnItem({
           gap: 1,
         }}
       >
-        <SortableContext
-          items={column.cards.map((card) => card.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {column.cards.map((card) => (
-            <SortableCardItem
+        {overlayMode ? (
+          column.cards.map((card) => (
+            <CardItem
               key={card.id}
               card={card}
               columnId={column.id}
@@ -165,15 +165,35 @@ function ColumnItem({
               onMoveCard={onMoveCard}
               onOpenDeleteCard={onOpenDeleteCard}
             />
-          ))}
-        </SortableContext>
+          ))
+        ) : (
+          <>
+            <SortableContext
+              items={column.cards.map((card) => card.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {column.cards.map((card) => (
+                <SortableCardItem
+                  key={card.id}
+                  card={card}
+                  columnId={column.id}
+                  orderedColumns={orderedColumns}
+                  onOpenCardDetail={onOpenCardDetail}
+                  onMoveCard={onMoveCard}
+                  onOpenDeleteCard={onOpenDeleteCard}
+                  isDragDisabled={isColumnDragging}
+                />
+              ))}
+            </SortableContext>
 
-        <CardDropZone
-          columnId={column.id}
-          index={column.cards.length}
-          isEmpty={!column.cards.length}
-          isActive={isCardDragging}
-        />
+            <CardDropZone
+              columnId={column.id}
+              index={column.cards.length}
+              isEmpty={!column.cards.length}
+              isActive={isCardDragging}
+            />
+          </>
+        )}
       </Box>
 
       <Box
