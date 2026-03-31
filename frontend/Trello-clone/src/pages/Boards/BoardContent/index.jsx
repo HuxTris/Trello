@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   closestCenter,
+  defaultDropAnimationSideEffects,
   DndContext,
   DragOverlay,
   KeyboardSensor,
@@ -35,6 +36,18 @@ const DRAG_ITEM_TYPE = {
   CARD_DROP_ZONE: 'CARD_DROP_ZONE',
 };
 
+const dragOverlayDropAnimation = {
+  duration: 240,
+  easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: '0.4',
+      },
+    },
+  }),
+};
+
 // Chặn click "dư âm" ngay sau drag, tránh mở card detail ngoài ý muốn.
 const BLOCK_CARD_CLICK_AFTER_DRAG_MS = 220;
 
@@ -54,6 +67,24 @@ const INITIAL_CONFIRM_DIALOG = {
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+
+/**
+ * -------------------------
+ * CARD DND FLOW (tổng quan)
+ * -------------------------
+ * 1) Drag source:
+ *    - Card đăng ký draggable ở SortableCardItem (type: CARD).
+ *    - Drop zone cuối cột/rỗng đăng ký ở CardDropZone (type: CARD_DROP_ZONE).
+ *
+ * 2) Trong lúc kéo:
+ *    - DndContext gọi collisionDetectionStrategy(...) để chọn "over" hiện tại.
+ *    - resolveCardDropTarget(...) chuyển "over" -> { targetColumnId, targetIndex }.
+ *
+ * 3) Kết thúc kéo:
+ *    - handleCardDragEnd(...) tạo snapshot order mới bằng buildColumnsAfterCardMove(...).
+ *    - setBoard optimistic trước để UI mượt.
+ *    - gọi boardApi.moveCard(...) để đồng bộ server.
+ */
 
 // Tìm vị trí hiện tại của card trong toàn bộ columns (columnId + index).
 const findCardLocation = (columns, cardId) => {
@@ -92,7 +123,8 @@ const hasSameCardOrder = (prevColumns, nextColumns) =>
 
 // Chuẩn hóa điểm drop của CARD thành { targetColumnId, targetIndex }.
 // over có thể là CARD, CARD_DROP_ZONE hoặc COLUMN.
-const resolveCardDropTarget = ({ over, columns }) => {
+// Đây là hàm "then chốt" quyết định preview reorder có đúng cảm giác kéo hay không.
+const resolveCardDropTarget = ({ active, over, columns }) => {
   if (!over) return null;
 
   const overData = over.data?.current;
@@ -102,8 +134,28 @@ const resolveCardDropTarget = ({ over, columns }) => {
     const targetColumn = columns.find((column) => column.id === overData.columnId);
     if (!targetColumn) return null;
 
-    const targetIndex = targetColumn.cards.findIndex((card) => card.id === overData.cardId);
-    if (targetIndex < 0) return null;
+    const overCardIndex = targetColumn.cards.findIndex((card) => card.id === overData.cardId);
+    if (overCardIndex < 0) return null;
+
+    // Nếu con trỏ đã qua nửa dưới card đang hover thì hiểu là drop "sau" card đó.
+    const activeTop = active.rect.current.translated?.top;
+    const overCardMiddleY = over.rect.top + over.rect.height / 2;
+    const isBelowOverCard = typeof activeTop === 'number' && activeTop > overCardMiddleY;
+
+    let targetIndex = overCardIndex;
+
+    if (isBelowOverCard) {
+      targetIndex += 1;
+
+      // Cùng column + kéo từ trên xuống: index sau khi remove active sẽ giảm 1.
+      const sourceColumnId = active.data?.current?.columnId;
+      if (sourceColumnId === targetColumn.id) {
+        const sourceIndex = targetColumn.cards.findIndex((card) => card.id === active.id);
+        if (sourceIndex !== -1 && sourceIndex < overCardIndex) {
+          targetIndex -= 1;
+        }
+      }
+    }
 
     return {
       targetColumnId: targetColumn.id,
@@ -155,8 +207,9 @@ const resolveColumnDropTarget = ({ over, columns }) => {
 
 // Collision detection theo từng loại item đang kéo:
 // - Kéo COLUMN: chỉ xét va chạm với COLUMN.
-// - Kéo CARD: xét CARD + DROP_ZONE + COLUMN.
-const collisionDetectionStrategy = (args) => {
+// - Kéo CARD: ưu tiên CARD, chỉ nhận DROP_ZONE của column rỗng (tránh "nhảy" preview).
+// Lưu ý: hàm này ảnh hưởng trực tiếp tới giá trị "over" trong mọi event drag.
+const collisionDetectionStrategy = (args, columns) => {
   const activeType = args.active.data?.current?.type;
 
   if (activeType === DRAG_ITEM_TYPE.COLUMN) {
@@ -178,11 +231,15 @@ const collisionDetectionStrategy = (args) => {
   if (activeType === DRAG_ITEM_TYPE.CARD) {
     const cardRelatedDroppableContainers = args.droppableContainers.filter((container) => {
       const type = container.data?.current?.type;
-      return (
-        type === DRAG_ITEM_TYPE.CARD ||
-        type === DRAG_ITEM_TYPE.CARD_DROP_ZONE ||
-        type === DRAG_ITEM_TYPE.COLUMN
-      );
+      if (type === DRAG_ITEM_TYPE.CARD) return true;
+      if (type !== DRAG_ITEM_TYPE.CARD_DROP_ZONE) return false;
+
+      const targetColumnId = container.data?.current?.columnId;
+      const targetColumn = columns.find((column) => column.id === targetColumnId);
+
+      // Chỉ giữ drop zone cho column rỗng để vẫn drop được vào list trống,
+      // còn column có card thì dùng va chạm CARD để preview vị trí ổn định.
+      return !targetColumn || !targetColumn.cards.length;
     });
 
     if (!cardRelatedDroppableContainers.length) {
@@ -199,6 +256,7 @@ const collisionDetectionStrategy = (args) => {
 };
 
 // Tạo columns mới sau thao tác kéo CARD (không mutate state cũ).
+// Hàm thuần (pure) để dễ test/tách biệt khỏi side-effect API.
 const buildColumnsAfterCardMove = ({ columns, cardId, sourceColumnId, targetColumnId, targetIndex }) => {
   const nextColumns = columns.map((column) => ({
     ...column,
@@ -446,6 +504,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
     setActiveCardId(cardId);
   };
 
+  // B1: bắt đầu kéo -> xác định đang kéo CARD hay COLUMN và chuẩn bị overlay data.
   const handleDragStart = ({ active }) => {
     const activeData = active.data?.current;
     if (!activeData?.type) return;
@@ -512,6 +571,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
     }
   };
 
+  // B2+B3 (cho CARD): từ "over" suy ra target index -> optimistic update -> gọi API moveCard.
   const handleCardDragEnd = async ({ active, over }) => {
     if (!over || !board) return;
 
@@ -522,7 +582,11 @@ function BoardContent({ boardId, onBoardLoaded }) {
     const sourceLocation = findCardLocation(orderedColumns, active.id);
     if (!sourceLocation) return;
 
-    const target = resolveCardDropTarget({ over, columns: orderedColumns });
+    const target = resolveCardDropTarget({
+      active,
+      over,
+      columns: orderedColumns,
+    });
     if (!target) return;
 
     const { targetColumnId, targetIndex } = target;
@@ -573,6 +637,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
     }
   };
 
+  // Điểm điều phối drag end cho cả COLUMN và CARD.
   const handleDragEnd = async (event) => {
     const activeData = event.active?.data?.current;
 
@@ -706,7 +771,8 @@ function BoardContent({ boardId, onBoardLoaded }) {
       >
         <DndContext
           sensors={sensors}
-          collisionDetection={collisionDetectionStrategy}
+          // orderedColumns được truyền vào để collision cho CARD biết cột nào rỗng/không rỗng.
+          collisionDetection={(args) => collisionDetectionStrategy(args, orderedColumns)}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
@@ -759,7 +825,7 @@ function BoardContent({ boardId, onBoardLoaded }) {
             />
           </Box>
 
-          <DragOverlay adjustScale={false}>
+          <DragOverlay adjustScale={false} dropAnimation={dragOverlayDropAnimation}>
             {activeDragType === DRAG_ITEM_TYPE.CARD ? <CardDragOverlay card={activeDragCardData} /> : null}
             {activeDragType === DRAG_ITEM_TYPE.COLUMN ? (
               <ColumnDragOverlay column={activeDragColumnData} orderedColumns={orderedColumns} />

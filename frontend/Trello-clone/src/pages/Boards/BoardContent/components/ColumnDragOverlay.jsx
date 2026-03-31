@@ -10,7 +10,7 @@ function ColumnDragOverlay({ column, orderedColumns }) {
     <Box
       sx={{
         pointerEvents: 'none',
-        boxShadow: '0 6px 18px rgba(9, 30, 66, 0.24)',
+        boxShadow: '0 10px 24px rgba(9, 30, 66, 0.26)',
       }}
     >
       <ColumnItem

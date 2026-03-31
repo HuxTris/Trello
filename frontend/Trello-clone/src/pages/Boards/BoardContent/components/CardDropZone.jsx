@@ -4,6 +4,9 @@ import { useDroppable } from '@dnd-kit/core';
 function CardDropZone({ columnId, index, isEmpty, isActive }) {
   // Drop zone là vùng thả bổ sung để:
   // 1) thả vào cuối list, 2) thả vào list rỗng.
+  // Ghi chú:
+  // - type = CARD_DROP_ZONE để BoardContent nhận diện đúng "over".
+  // - index thường là column.cards.length (điểm thả cuối cột).
   const { isOver, setNodeRef } = useDroppable({
     id: `card-drop-zone-${columnId}-${index}`,
     data: {

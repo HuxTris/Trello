@@ -15,10 +15,14 @@ function SortableColumnItem(props) {
   return (
     <Box
       ref={setNodeRef}
+      aria-hidden={isDragging}
       sx={{
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0 : 1,
+        // Giữ cột gốc ở vị trí cũ như 1 "placeholder" mờ khi đang kéo.
+        opacity: isDragging ? 0.4 : 1,
+        filter: isDragging ? 'saturate(0.92)' : 'none',
+        pointerEvents: isDragging ? 'none' : 'auto',
       }}
     >
       <ColumnItem

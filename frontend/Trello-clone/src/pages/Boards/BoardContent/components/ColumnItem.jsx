@@ -170,6 +170,8 @@ function ColumnItem({
         ) : (
           <>
             {/* Normal mode: cards nằm trong SortableContext để kéo-thả giữa các vị trí */}
+            {/* items phải là mảng id card theo đúng thứ tự render hiện tại.
+                Nếu lệch thứ tự render, hiệu ứng sortable sẽ giật/nhảy vị trí. */}
             <SortableContext
               items={column.cards.map((card) => card.id)}
               strategy={verticalListSortingStrategy}
