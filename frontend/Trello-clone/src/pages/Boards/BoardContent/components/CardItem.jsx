@@ -18,7 +18,11 @@ function CardItem({
   onOpenCardDetail,
   onMoveCard,
   onOpenDeleteCard,
+  dragProps,
+  isDragging,
 }) {
+  // Tách onKeyDown để không bị ghi đè logic mở detail bằng Enter.
+  const { onKeyDown: onDragKeyDown, ...restDragProps } = dragProps || {};
   const moveItems = (orderedColumns || [])
     .filter((item) => item.id !== columnId)
     .map((targetColumn) => ({
@@ -56,11 +60,15 @@ function CardItem({
       tabIndex={0}
       onClick={() => onOpenCardDetail(card.id)}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        onDragKeyDown?.(event);
+        if (event.defaultPrevented) return;
+
+        if (event.key === 'Enter') {
           event.preventDefault();
           onOpenCardDetail(card.id);
         }
       }}
+      {...restDragProps}
       sx={{
         borderRadius: 1.5,
         bgcolor: 'card.main',
@@ -68,6 +76,7 @@ function CardItem({
         boxShadow: '0 1px 0 rgba(9, 30, 66, 0.14)',
         flexShrink: 0,
         cursor: 'pointer',
+        opacity: isDragging ? 0.55 : 1,
         '&:hover': {
           borderColor: 'primary.main',
         },
@@ -104,6 +113,15 @@ function CardItem({
               <IconButton
                 size="small"
                 {...triggerProps}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onTouchStart={(event) => {
+                  event.stopPropagation();
+                }}
                 onClick={(event) => {
                   event.stopPropagation();
                   triggerProps.onClick(event);

@@ -1,4 +1,5 @@
 import AddIcon from '@mui/icons-material/Add';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -17,6 +18,8 @@ import {
   COLUMN_WIDTH,
 } from '../constants';
 import CardItem from './CardItem';
+import CardDropZone from './CardDropZone';
+import SortableCardItem from './SortableCardItem';
 
 function ColumnItem({
   column,
@@ -34,6 +37,9 @@ function ColumnItem({
   onNewCardTitleChange,
   onSubmitAddCard,
   dragHandleProps,
+  isCardDragging,
+  isColumnDragging,
+  overlayMode = false,
 }) {
   const columnMenuItems = [
     {
@@ -148,17 +154,50 @@ function ColumnItem({
           gap: 1,
         }}
       >
-        {column.cards.map((card) => (
-          <CardItem
-            key={card.id}
-            card={card}
-            columnId={column.id}
-            orderedColumns={orderedColumns}
-            onOpenCardDetail={onOpenCardDetail}
-            onMoveCard={onMoveCard}
-            onOpenDeleteCard={onOpenDeleteCard}
-          />
-        ))}
+        {/* overlayMode dùng cho DragOverlay: render UI tĩnh giống hệt cột thật, không gắn sortable/dropzone */}
+        {overlayMode ? (
+          column.cards.map((card) => (
+            <CardItem
+              key={card.id}
+              card={card}
+              columnId={column.id}
+              orderedColumns={orderedColumns}
+              onOpenCardDetail={onOpenCardDetail}
+              onMoveCard={onMoveCard}
+              onOpenDeleteCard={onOpenDeleteCard}
+            />
+          ))
+        ) : (
+          <>
+            {/* Normal mode: cards nằm trong SortableContext để kéo-thả giữa các vị trí */}
+            {/* items phải là mảng id card theo đúng thứ tự render hiện tại.
+                Nếu lệch thứ tự render, hiệu ứng sortable sẽ giật/nhảy vị trí. */}
+            <SortableContext
+              items={column.cards.map((card) => card.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {column.cards.map((card) => (
+                <SortableCardItem
+                  key={card.id}
+                  card={card}
+                  columnId={column.id}
+                  orderedColumns={orderedColumns}
+                  onOpenCardDetail={onOpenCardDetail}
+                  onMoveCard={onMoveCard}
+                  onOpenDeleteCard={onOpenDeleteCard}
+                  isDragDisabled={isColumnDragging}
+                />
+              ))}
+            </SortableContext>
+
+            <CardDropZone
+              columnId={column.id}
+              index={column.cards.length}
+              isEmpty={!column.cards.length}
+              isActive={isCardDragging}
+            />
+          </>
+        )}
       </Box>
 
       <Box
