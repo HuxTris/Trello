@@ -17,8 +17,8 @@ import {
   SortableContext,
 } from '@dnd-kit/sortable';
 import Box from '@mui/material/Box';
-import boardApi from '../../../apis/boardApi';
-import { mapOrder } from '../../../utils/sorts';
+import boardApi from '@/features/board/api/boardApi';
+import { mapOrder } from '@/shared/utils/sorts';
 import CardDetailDialog from './CardDetailDialog';
 import ConfirmDialog from './ConfirmDialog';
 import RenameColumnDialog from './RenameColumnDialog';
