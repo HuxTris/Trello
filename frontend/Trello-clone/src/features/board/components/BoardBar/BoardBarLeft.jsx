@@ -11,7 +11,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined';
-import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
+import MuiDropdownMenu from '@/shared/components/Dropdown/MuiDropdownMenu';
 
 const PRIVATE_ITEMS = [
   { id: 'private', label: 'Private', icon: LockOutlinedIcon },

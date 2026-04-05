@@ -17,7 +17,7 @@ import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
 import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
-import MuiDropdownMenu from '../../../components/Dropdown/MuiDropdownMenu';
+import MuiDropdownMenu from '@/shared/components/Dropdown/MuiDropdownMenu';
 
 const BOARD_MEMBERS = [
   { id: 'dev', icon: CodeOutlinedIcon, color: '#1976D2' },

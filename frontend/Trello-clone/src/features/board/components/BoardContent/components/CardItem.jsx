@@ -9,7 +9,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import MuiDropdownMenu from '../../../../components/Dropdown/MuiDropdownMenu';
+import MuiDropdownMenu from '@/shared/components/Dropdown/MuiDropdownMenu';
 
 function CardItem({
   card,

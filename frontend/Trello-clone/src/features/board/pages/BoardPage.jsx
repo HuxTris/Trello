@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import Container from '@mui/material/Container';
-import AppBar from '../../components/AppBar';
-import boardApi from '../../apis/boardApi';
-import { DEFAULT_BOARD_ID } from '../../utils/constant';
-import BoardBar from './BoardBar';
-import BoardContent from './BoardContent';
+import AppBar from '@/shared/components/AppBar';
+import boardApi from '@/features/board/api/boardApi';
+import { DEFAULT_BOARD_ID } from '@/features/board/constants';
+import BoardBar from '../components/BoardBar';
+import BoardContent from '../components/BoardContent';
 
-function Board() {
+function BoardPage() {
   const [boardList, setBoardList] = useState([]);
   const [boardId, setBoardId] = useState(DEFAULT_BOARD_ID);
   const [boardTitle, setBoardTitle] = useState('');
@@ -38,4 +38,4 @@ function Board() {
   )
 }
 
-export default Board
+export default BoardPage
